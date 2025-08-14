@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+out/
+.env
+.env.*
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Colab / data
+*.zip
+*.parquet
+*.geojson
+/content/
+
+# virtualenv
+venv/
+ENV/
+.env/
+
+# node
+node_modules/

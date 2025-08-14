@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abstract-data-pipeline"
+version = "0.0.1"
+description = "Small Source/Transform/Sink pipeline framework (example stubs)."
+authors = [{name="You", email="you@example.com"}]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "requests",
+  "pandas",
+  "pyyaml"
+]

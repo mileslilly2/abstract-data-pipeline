@@ -1,0 +1,19 @@
+name: ice_clean
+outdir: out/ice
+state_file: .state_ice.json
+
+source:
+  class: adp_plugins.ice.ice_excel:LocalExcelFiles
+  params:
+    folder: "/content/raw2/ice_release_jul2025"
+
+transforms:
+  - class: adp_plugins.ice.ice_excel:DetectHeaderAndRead
+    params:
+      keywords: ["Date","Area of Responsibility","State"]
+      lookahead: 40
+
+sink:
+  class: adp_plugins.ice.ice_excel:CsvSink
+  params:
+    filename: ice_clean.csv
