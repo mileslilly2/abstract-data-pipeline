@@ -3,14 +3,13 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "abstract-data-pipeline"
+name = "adp-plugins-disaster"
 version = "0.0.1"
-description = "Small Source/Transform/Sink pipeline framework (example stubs)."
-authors = [{name="You", email="you@example.com"}]
-readme = "README.md"
+description = "Example ADP plugin: weather.gov alerts"
 requires-python = ">=3.9"
-dependencies = [
-  "requests",
-  "pandas",
-  "pyyaml"
-]
+dependencies = ["requests"]
+
+[project.entry-points."adp.plugins"]
+weather_gov = "adp_plugins.disaster.weather_gov:WeatherGovAlertsSource"
+alerts_to_flat = "adp_plugins.disaster.weather_gov:AlertsToFlatRecords"
+geojson_alerts_sink = "adp_plugins.disaster.weather_gov:GeoJsonAlertsSink"
