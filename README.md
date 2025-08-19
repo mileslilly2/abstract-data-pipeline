@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+# Abstract Data Pipeline (ADP)
+
+Reusable, pluggable Python framework for fetching, cleaning, and exporting datasets.
+
+## Diagram
+=======
 Got it — here’s the same README but with a simple diagram section so someone scanning the repo immediately sees how the pieces fit together.
 
 ---
@@ -80,16 +87,23 @@ abstract-data-pipeline/
 ---
 
 ## 🔍 How It Works
+>>>>>>> origin-main
 
 ```mermaid
 flowchart LR
     A[Source] --> B[Transform(s)]
     B --> C[Sink]
+<<<<<<< HEAD
+
+=======
     
+>>>>>>> origin-main
     subgraph Pipeline
         direction LR
         A --> B --> C
     end
+<<<<<<< HEAD
+=======
 
     style A fill:#e6f7ff,stroke:#1890ff,stroke-width:2px
     style B fill:#fff7e6,stroke:#fa8c16,stroke-width:2px
@@ -198,3 +212,4 @@ See `.github/workflows/nightly.yml` for an example GitHub Actions workflow that 
 ## 📜 License
 
 
+>>>>>>> origin-main
