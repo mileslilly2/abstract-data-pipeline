@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=69","wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,12 +10,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "pandas>=2.1",
-    "openpyxl>=3.1",             # Excel parsing
+    "openpyxl>=3.1"
 ]
 
 [project.entry-points."adp.plugins"]
-# ↳ update `IceExcelSource` if your class has a different name or
-#    add additional lines for transforms/sinks.
 ice_excel = "adp_plugins.ice.ice_excel:IceExcelSource"
 
 [tool.setuptools]
