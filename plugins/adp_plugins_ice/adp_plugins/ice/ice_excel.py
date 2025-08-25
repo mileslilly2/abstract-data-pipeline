@@ -31,6 +31,11 @@ class CsvSink(Sink):
     def run(self, ctx: Context, rows):
         import pandas as pd
         out = ctx.outdir / (self.kw.get("filename","clean.csv"))
+
+        # Ensure the parent directory exists
+        out.parent.mkdir(parents=True, exist_ok=True)
+
         df = pd.DataFrame(list(rows))
         df.to_csv(out, index=False)
         return out
+

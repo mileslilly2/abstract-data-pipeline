@@ -1,0 +1,14 @@
+# Pull all actual alerts for WV in the last 3 days and save to GeoJSON
+source:
+  ref: ep:weather_gov
+  params:
+    location: WV         # 2-letter state code
+    days_back: 3         # how far back in days to query
+
+transform:
+  - ref: ep:alerts_to_flat
+
+sink:
+  ref: ep:geojson_alerts_sink
+  params:
+    filename: weather/alerts_wv.geojson
