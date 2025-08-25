@@ -27,3 +27,4 @@ ENV/
 # node
 node_modules/
 .venv/
+.venv/
