@@ -1,3 +1,21 @@
 [build-system]
-requires = ["setuptools>=61.0","wheel"]
+requires = ["setuptools>=69","wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "adp-plugins-ice"
+version = "0.1.0"
+description = "ADP plug-ins for ICE detention & enforcement datasets."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=2.1",
+    "openpyxl>=3.1"
+]
+
+[project.entry-points."adp.plugins"]
+ice_excel = "adp_plugins.ice.ice_excel:IceExcelSource"
+
+[tool.setuptools]
+packages = { find = { where = ["."] } }
+include-package-data = false
