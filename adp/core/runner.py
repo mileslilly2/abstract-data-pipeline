@@ -24,7 +24,7 @@ class Context:
     env: Dict[str, str]      # env vars (API keys, etc.)
 
 class State(Protocol):
-    def get(self, key: str, default: Any=None) -> Any: ...
+    def get(self, key: str, default: Any = None) -> Any: ...
     def set(self, key: str, value: Any) -> None: ...
     def save(self) -> None: ...
 
@@ -46,11 +46,6 @@ class Sink(ABC):
     @abstractmethod
     def run(self, ctx: Context, rows: Batch) -> Optional[Path]: ...
 
-
-
-# adp/core/runner.py  (append to the bottom of the file)
-
-
 # ---------- helpers ----------
 def _resolve_class(ref: str):
     """Handle 'module:Class', 'module.Class', and 'ep:<name>'."""
@@ -67,7 +62,6 @@ def _resolve_class(ref: str):
         mod, cls = ref.rsplit(".", 1)
     mod_obj = __import__(mod, fromlist=[cls])
     return getattr(mod_obj, cls)
-
 
 class _InMemoryState(dict):
     def get(self, k, d=None): return super().get(k, d)
@@ -100,20 +94,33 @@ def run_pipeline(spec_path: str | Path, *, workdir: str | Path = ".") -> None:
     )
 
     # ---------- build components ----------
+    def _load_component(step_conf: Dict[str, Any]):
+        if "class" in step_conf:
+            return _resolve_class(step_conf["class"]), step_conf.get("params", {})
+        elif "ref" in step_conf:
+            return _resolve_class(step_conf["ref"]), step_conf.get("params", {})
+        else:
+            raise KeyError("Pipeline step must define either 'class' or 'ref'")
+
+    # Source
     src_conf = conf["source"]
-    SourceCls = _resolve_class(src_conf["class"])
-    source = SourceCls(**src_conf.get("params", {}))
+    SourceCls, src_params = _load_component(src_conf)
+    source = SourceCls(**src_params)
+
+    # Transforms (accept both 'transform' and 'transforms', normalize to list)
+    t_confs = conf.get("transform") or conf.get("transforms") or []
+    if isinstance(t_confs, dict):
+        t_confs = [t_confs]
 
     tfms = []
-    for tconf in conf.get("transforms", []):
-        T = _resolve_class(tconf["class"])
-        tfms.append(T(**tconf.get("params", {})))
+    for tconf in t_confs:
+        TCls, t_params = _load_component(tconf)
+        tfms.append(TCls(**t_params))
 
+    # Sink
     sink_conf = conf["sink"]
-    SinkCls = _resolve_class(sink_conf["class"])
-    sink = SinkCls(**sink_conf.get("params", {}))
-
-    ctx.log.info("Pipeline constructed; running …")
+    SinkCls, sink_params = _load_component(sink_conf)
+    sink = SinkCls(**sink_params)
 
     # ---------- execute ----------
     rows = source.run(ctx)

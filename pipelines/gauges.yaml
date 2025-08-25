@@ -1,0 +1,11 @@
+version: 1
+
+source:
+  ref: ep:gauges
+  params:
+    bbox: "-81.0,38.5,-79.0,40.5"  # Approx. North Central WV
+
+sink:
+  ref: ep:geojson_gauges_sink
+  params:
+    filename: test/gauges.geojson

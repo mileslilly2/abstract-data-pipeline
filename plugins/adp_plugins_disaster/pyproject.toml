@@ -1,3 +1,4 @@
+# plugins/adp_plugins_disaster/pyproject.toml
 [build-system]
 requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -9,14 +10,14 @@ description = "ADP plug-ins for disaster data sources (weather.gov alerts, etc.)
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "requests>=2.31",            # weather.gov API
+  "requests>=2.31",
 ]
 
 [project.entry-points."adp.plugins"]
-weather_gov           = "adp_plugins.disaster.weather_gov:WeatherGovAlertsSource"
-alerts_to_flat        = "adp_plugins.disaster.weather_gov:AlertsToFlatRecords"
-geojson_alerts_sink   = "adp_plugins.disaster.weather_gov:GeoJsonAlertsSink"
+weather_gov         = "adp_plugins.disaster.weather_gov:WeatherGovAlertsSource"
+alerts_to_flat      = "adp_plugins.disaster.weather_gov:AlertsToFlatRecords"
+geojson_alerts_sink = "adp_plugins.disaster.weather_gov:GeoJsonAlertsSink"
+csv_sink            = "adp_plugins.disaster.weather_gov:CsvSink"
 
-[tool.setuptools]
-packages = { find = { where = ["."] } }   # include adp_plugins.disaster.*
-include-package-data = false
+[tool.setuptools.packages.find]
+where = ["."]

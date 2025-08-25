@@ -1,0 +1,13 @@
+source:
+  ref: ep:weather_gov
+  params:
+    location: WV
+    days_back: 1
+
+transform:
+  ref: ep:alerts_to_flat
+
+sink:
+  ref: ep:geojson_alerts_sink
+  params:
+    filename: test/alerts.geojson
