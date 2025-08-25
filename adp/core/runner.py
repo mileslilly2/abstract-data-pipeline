@@ -7,6 +7,9 @@ import yaml
 from importlib.metadata import entry_points
 from pathlib import Path
 from types import SimpleNamespace
+import os
+
+# adp/core/base.py
 
 Record = Dict[str, Any]
 Batch = Iterable[Record]
