@@ -1,0 +1,14 @@
+# Pull all actual alerts near a point (Fairmont WV) in the last 2 days
+source:
+  ref: ep:weather_gov
+  params:
+    location: "39.485,-80.15"   # lat,lon
+    days_back: 2                # how far back in days to query
+
+transform:
+  - ref: ep:alerts_to_flat
+
+sink:
+  ref: ep:geojson_alerts_sink
+  params:
+    filename: weather/alerts_point.geojson

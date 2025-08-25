@@ -1,118 +1,179 @@
-# plugins/adp_plugins.disaster/adp_plugins/disaster/weather_gov.py
-"""
-Small example plugin: Weather.gov alerts source / transform / sink.
-
-Usage:
-    from adp.core.base import Source, Transform, Sink
-    # Then reference via module path: 
-    # plugins.adp_plugins.disaster.adp_plugins.disaster.weather_gov:WeatherGovAlertsSource
-"""
 from __future__ import annotations
-import time
-from typing import Iterable, Dict, Any, Generator
+from adp.core.base import Source, Transform, Sink, Context, Record
 from pathlib import Path
-import json
+from typing import Iterable, Dict, Any, Iterator, List, Optional
+import datetime as dt
 import requests
+import time
 
-# Import base classes from your core package
-from adp.core.base import Source, Transform, Sink
+UA = "adp-disaster-pipeline (contact: you@example.com)"
 
-Record = Dict[str, Any]
-
-
+# ---------- SOURCE ----------
 class WeatherGovAlertsSource(Source):
-    """Fetch alerts from https://api.weather.gov/alerts.
-
-    Params accepted via kwargs (self.kw):
-      - location: "lat,lon" point or 2-letter state code (str)
-      - limit: page size (int, default 200)
-      - status: 'actual'|'exercise' etc. (default 'actual')
-
-    Yields raw GeoJSON features (dicts).
     """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.limit = int(self.kw.get("limit", 200))
-        self.location = self.kw.get("location")
-        self.status = self.kw.get("status", "actual")
-        self.base = "https://api.weather.gov/alerts"
+    Fetch NWS /alerts with optional point or area, with proper pagination.
 
-    def _headers(self, ctx):
-        ua = ctx.env.get("ADP_USER_AGENT") or "adp-plugin-weathergov/0.1 (you@example.com)"
-        return {"User-Agent": ua, "Accept": "application/geo+json, application/json"}
+    kw:
+      location: "lat,lon"  OR  2-letter state code (e.g. "WV"). If omitted, nationwide.
+      days_back: integer window (default 2)
+      status: "actual" (default)
+      message_type: "alert" (default)
+      event: optional string to filter event name (e.g., "Flash Flood Warning")
+      limit: page size (default 500)
+      pause: seconds between pages (default 0.6, be polite)
+    """
 
-    def run(self, ctx) -> Iterable[Record]:
-        params = {"status": self.status, "message_type": "alert", "limit": self.limit}
-        if self.location:
-            if "," in str(self.location):
-                params["point"] = str(self.location)
-            else:
-                params["area"] = str(self.location)
-        url = self.base
-        headers = self._headers(ctx)
+    URL = "https://api.weather.gov/alerts"
 
-        # paginate until no "next" in "pagination"
+    def run(self, ctx: Context) -> Iterator[Record]:
+        loc = (self.kw.get("location") or "").strip()
+        days_back = int(self.kw.get("days_back", 2))
+        status = self.kw.get("status", "actual")
+        message_type = self.kw.get("message_type", "alert")
+        event = self.kw.get("event")  # optional
+        limit = int(self.kw.get("limit", 500))
+        pause = float(self.kw.get("pause", 0.6))
+
+        end = dt.datetime.utcnow()
+        start = end - dt.timedelta(days=days_back)
+
+        spatial: Dict[str, Any] = {}
+        if "," in loc and loc:
+            spatial["point"] = loc  # "lat,lon"
+        elif len(loc) == 2:
+            spatial["area"] = loc.upper()  # 2-letter state
+        # else: nationwide
+
+        params = {
+            **spatial,
+            "status": status,
+            "message_type": message_type,
+            "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "end": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "limit": limit,
+        }
+        if event:
+            params["event"] = event
+
+        headers = {"User-Agent": UA}
+
+        url = self.URL
+        total = 0
         while url:
-            resp = requests.get(url, params=params if url == self.base else None, headers=headers, timeout=30)
-            resp.raise_for_status()
-            js = resp.json()
-            features = js.get("features", []) or []
-            for feat in features:
-                yield feat
-            # get next page URL (API returns pagination.next)
+            r = requests.get(
+                url,
+                params=params if url == self.URL else None,
+                headers=headers,
+                timeout=30,
+            )
+            r.raise_for_status()
+            js = r.json()
+            feats = js.get("features", [])
+            for f in feats:
+                yield f  # raw GeoJSON Feature
+            total += len(feats)
+            ctx.logger.info(f"Fetched {len(feats)} (total {total}) from {url}")
+            # pagination
             url = js.get("pagination", {}).get("next")
-            # once we follow next, we don't resend params
             params = None
-            # polite pause to avoid hammering API if large
-            time.sleep(0.15)
+            if url and pause > 0:
+                time.sleep(pause)
 
 
-class AlertsToFlatRecords(Transform):
-    """Flatten weather.gov feature -> simple record.
-
-    Produces records like:
-      { "id": "...", "event": "...", "severity": "...", "sent": "...", "_geometry": {...} }
+# ---------- TRANSFORMS ----------
+class NormalizeAlerts(Transform):
     """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    Flatten each feature -> record with a few useful fields retained.
 
-    def run(self, ctx, rows: Iterable[Record]) -> Iterable[Record]:
-        for feat in rows:
-            props = feat.get("properties", {}) or {}
-            rec = {
-                "id": feat.get("id"),
-                "event": props.get("event"),
-                "severity": props.get("severity"),
-                "sent": props.get("sent"),
-                # keep original geometry as GeoJSON mapping under _geometry for GeoJsonSink
-                "_geometry": feat.get("geometry"),
-                # include other properties as needed; don't make record too heavy here
-                "headline": props.get("headline"),
-                "areaDesc": props.get("areaDesc"),
+    Produces dicts:
+      id, sent, event, severity, headline, area, geometry (GeoJSON or None)
+    """
+    def run(self, ctx: Context, rows: Iterable[Record]) -> Iterator[Record]:
+        for f in rows:
+            prop = f.get("properties", {}) or {}
+            yield {
+                "id": f.get("id"),
+                "sent": prop.get("sent"),
+                "event": prop.get("event"),
+                "severity": prop.get("severity"),
+                "headline": prop.get("headline"),
+                "area": prop.get("areaDesc"),
+                "geometry": f.get("geometry"),
             }
-            yield rec
 
 
-class GeoJsonAlertsSink(Sink):
-    """Write a GeoJSON FeatureCollection to ctx.outdir/<filename>.
-
-    Expects records to include `_geometry` key containing a GeoJSON geometry (or None).
+class FilterAlertsByKeywords(Transform):
     """
-    def __init__(self, filename: str = "alerts.geojson", **kwargs):
-        super().__init__(**kwargs)
-        self.filename = filename
+    Keep only alerts whose event/headline/area match any keyword (case-insensitive).
+    kw:
+      keywords: list[str] or pipe-string "flood|tornado|wildfire"
+    """
+    def run(self, ctx: Context, rows: Iterable[Record]) -> Iterator[Record]:
+        import re
+        kws = self.kw.get("keywords", [])
+        if isinstance(kws, str):
+            pat = re.compile(kws, re.I)
+        else:
+            pat = re.compile("|".join(kws), re.I) if kws else None
 
-    def run(self, ctx, rows: Iterable[Record]):
-        features = []
         for r in rows:
-            r = dict(r)  # make a copy
-            geom = r.pop("_geometry", None)
-            # properties should not contain non-serializable objects
-            properties = {k: v for k, v in r.items()}
-            features.append({"type": "Feature", "geometry": geom, "properties": properties})
+            if not pat:
+                yield r
+                continue
+            hay = " ".join(
+                str(x or "")
+                for x in (r.get("event"), r.get("headline"), r.get("area"))
+            )
+            if pat.search(hay):
+                yield r
 
-        outdir = Path(ctx.outdir)
-        outdir.mkdir(parents=True, exist_ok=True)
-        out = outdir / self.filename
-        out.write_text(json.dumps({"type": "FeatureCollection", "features": features}, indent=2, ensure_ascii=False))
+
+# ---------- SINKS ----------
+class GeoJsonSink(Sink):
+    """
+    Write a FeatureCollection to GeoJSON.
+    Expects upstream rows to be either raw Features OR records with 'geometry'.
+    kw:
+      filename: relative path under ctx.outdir (default 'alerts.geojson')
+      collection_props: dict to add at top level (optional)
+    """
+    def run(self, ctx: Context, rows: Iterable[Record]) -> Path:
+        from pathlib import Path
+
+        out = ctx.outdir / self.kw.get("filename", "alerts.geojson")
+        out.parent.mkdir(parents=True, exist_ok=True)
+
+        features: List[Dict[str, Any]] = []
+        for r in rows:
+            if "type" in r and r.get("type") == "Feature":
+                features.append(r)
+            else:
+                features.append(
+                    {
+                        "type": "Feature",
+                        "geometry": r.get("geometry"),
+                        "properties": {k: v for k, v in r.items() if k != "geometry"},
+                    }
+                )
+
+        fc = {"type": "FeatureCollection", "features": features}
+        # optional top-level properties
+        if isinstance(self.kw.get("collection_props"), dict):
+            fc.update(self.kw["collection_props"])
+
+        import json
+        out.write_text(json.dumps(fc))
+        ctx.logger.info(f"Wrote {len(features)} features -> {out}")
+        return out
+
+
+class CsvSink(Sink):
+    """CSV writer that creates parent dirs first."""
+    def run(self, ctx: Context, rows: Iterable[Record]) -> Path:
+        import pandas as pd
+        out = ctx.outdir / self.kw.get("filename", "alerts.csv")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame(list(rows))
+        df.to_csv(out, index=False)
+        ctx.logger.info(f"Wrote {len(df)} rows -> {out}")
         return out
