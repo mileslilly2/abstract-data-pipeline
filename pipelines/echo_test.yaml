@@ -1,0 +1,10 @@
+source:
+  ref: ep:weather_gov
+  params:
+    location: WV
+    days_back: 1
+
+sink:
+  ref: ep:geojson_alerts_sink
+  params:
+    filename: test/echo.geojson

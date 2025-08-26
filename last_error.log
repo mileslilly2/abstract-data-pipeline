@@ -1,0 +1,77 @@
+╭────────────────────────────────────────── Traceback (most recent call last) ───────────────────────────────────────────╮
+│ /home/mileslilly2/abstract-data-pipeline-1/adp/core/cli.py:27 in run                                                   │
+│                                                                                                                        │
+│   24 │   if not spec_path.exists():                                                                                    │
+│   25 │   │   typer.echo(f"❌ Spec not found: {spec}")                                                                  │
+│   26 │   │   raise typer.Exit(code=2)                                                                                  │
+│ ❱ 27 │   run_pipeline(spec_path, workdir=workdir)                                                                      │
+│   29                                                                                                                   │
+│   29                                                                                                                   │
+│   30 @app.command("list-plugins")                                                                                      │
+│                                                                                                                        │
+│ ╭────────────────────── locals ───────────────────────╮                                                                │
+│ │      spec = 'pipelines/alerts_flat.yaml'            │                                                                │
+│ │ spec_path = PosixPath('pipelines/alerts_flat.yaml') │                                                                │
+│ │   workdir = '.'                                     │                                                                │
+│ ╰─────────────────────────────────────────────────────╯                                                                │
+│                                                                                                                        │
+│ /home/mileslilly2/abstract-data-pipeline-1/adp/core/runner.py:120 in run_pipeline                                      │
+│                                                                                                                        │
+│   117 │   # Transforms (accept both 'transform' and 'transforms')                                                      │
+│   118 │   tfms = []                                                                                                    │
+│   119 │   for tconf in conf.get("transform", conf.get("transforms", [])):                                              │
+│ ❱ 120 │   │   TCls, t_params = _load_component(tconf)                                                                  │
+│   121 │   │   tfms.append(TCls(**t_params))                                                                            │
+│   122 │                                                                                                                │
+│   123 │   # Sink                                                                                                       │
+│                                                                                                                        │
+│ ╭───────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮          │
+│ │       conf = {                                                                                            │          │
+│ │              │   'version': 1,                                                                            │          │
+│ │              │   'source': {'ref': 'ep:weather_gov', 'params': {'location': 'WV', 'days_back': 1}},       │          │
+│ │              │   'transform': {'ref': 'ep:alerts_to_flat'},                                               │          │
+│ │              │   'sink': {                                                                                │          │
+│ │              │   │   'ref': 'ep:geojson_alerts_sink',                                                     │          │
+│ │              │   │   'params': {'filename': 'test/alerts.geojson'}                                        │          │
+│ │              │   }                                                                                        │          │
+│ │              }                                                                                            │          │
+│ │        ctx = Context(                                                                                     │          │
+│ │              │   workdir=PosixPath('.'),                                                                  │          │
+│ │              │   outdir=PosixPath('out'),                                                                 │          │
+│ │              │   state={},                                                                                │          │
+│ │              │   log=_Logger(),                                                                           │          │
+│ │              │   config={},                                                                               │          │
+│ │              │   env={                                                                                    │          │
+│ │              │   │   'SHELL': '/bin/bash',                                                                │          │
+│ │              │   │   'CLOUD_CODE_CLOUD_SHELL_AUTHENTICATION': 'true',                                     │          │
+│ │              │   │   'COLORTERM': 'truecolor',                                                            │          │
+│ │              │   │   'TERM_PROGRAM_VERSION': '1.100.3-cde',                                               │          │
+│ │              │   │   'GEMINI_CLI_IDE_SERVER_PORT': '42061',                                               │          │
+│ │              │   │   'HISTSIZE': '1000',                                                                  │          │
+│ │              │   │   'EDITOR_IN_CLOUD_SHELL': 'true',                                                     │          │
+│ │              │   │   'JAVA_HOME': '/usr/lib/jvm/java-17-openjdk-amd64',                                   │          │
+│ │              │   │   'CLOUD_SHELL': 'true',                                                               │          │
+│ │              │   │   'DEVSHELL_PROJECT_ID': '',                                                           │          │
+│ │              │   │   ... +54                                                                              │          │
+│ │              │   }                                                                                        │          │
+│ │              )                                                                                            │          │
+│ │     source = <adp_plugins.disaster.weather_gov.WeatherGovAlertsSource object at 0x7e78a8f39190>           │          │
+│ │  spec_path = PosixPath('pipelines/alerts_flat.yaml')                                                      │          │
+│ │   src_conf = {'ref': 'ep:weather_gov', 'params': {'location': 'WV', 'days_back': 1}}                      │          │
+│ │ src_params = {'location': 'WV', 'days_back': 1}                                                           │          │
+│ │      tconf = 'ref'                                                                                        │          │
+│ │       tfms = []                                                                                           │          │
+│ │    workdir = '.'                                                                                          │          │
+│ ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────╯          │
+│                                                                                                                        │
+│ /home/mileslilly2/abstract-data-pipeline-1/adp/core/runner.py:108 in _load_component                                   │
+│                                                                                                                        │
+│   105 │   │   if "class" in step_conf:                                                         ╭───── locals ──────╮   │
+│   106 │   │   │   return _resolve_class(step_conf["class"]), step_conf.get("params", {})       │ step_conf = 'ref' │   │
+│   107 │   │   elif "ref" in step_conf:                                                         ╰───────────────────╯   │
+│ ❱ 108 │   │   │   return _resolve_class(step_conf["ref"]), step_conf.get("params", {})                                 │
+│   109 │   │   else:                                                                                                    │
+│   110 │   │   │   raist_error.logse KeyError("Pipeline step must define either 'class' or 'ref'")                                  │
+│   111                                                                                                                  │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+TypeError: st_error.logstring indices must be integers, not 'str'
