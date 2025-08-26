@@ -18,6 +18,10 @@ weather_gov         = "adp_plugins.disaster.weather_gov:WeatherGovAlertsSource"
 alerts_to_flat      = "adp_plugins.disaster.weather_gov:AlertsToFlatRecords"
 geojson_alerts_sink = "adp_plugins.disaster.weather_gov:GeoJsonAlertsSink"
 csv_sink            = "adp_plugins.disaster.weather_gov:CsvSink"
+gauges              = "adp_plugins.disaster.gauges:GaugesSource"
+geojson_gauges_sink = "adp_plugins.disaster.gauges:GeoJsonGaugesSink"
+
+
 
 [tool.setuptools.packages.find]
 where = ["."]
