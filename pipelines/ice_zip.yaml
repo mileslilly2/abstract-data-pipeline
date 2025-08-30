@@ -1,0 +1,79 @@
+version: 1
+steps:
+  # ─────────────────────────────
+  # 1. Download raw ICE spreadsheets
+  # ─────────────────────────────
+  - id: ice_zip
+    uses: ep:ice.download_zip
+    params:
+      url: "https://ucla.box.com/shared/static/f9ish3m738cnke6xo1f4h7xnsc1b17x0.zip"
+      outdir: "data/ice/raw"   # extract ZIP here
+
+  # ─────────────────────────────
+  # 2. List Excel files from the extracted ZIP
+  # ─────────────────────────────
+  - id: xls_files
+    uses: ep:ice.local_files
+    needs: [ice_zip]
+    params:
+      folder: "data/ice/raw/ice_release_jul2025"
+
+  # ─────────────────────────────
+  # 3. Clean Excel → normalized rows
+  # ─────────────────────────────
+  - id: cleaned_rows
+    uses: ep:ice.detect_headers
+    needs: [xls_files]
+
+  # ─────────────────────────────
+  # 4. Write out both CSV + JSON per file
+  # ─────────────────────────────
+  - id: cleaned_sink
+    uses: ep:ice.csv_sink
+    needs: [cleaned_rows]
+    params:
+      outdir: "data/ice/clean"
+
+  # ─────────────────────────────
+  # 5. Download TIGER shapefile
+  # ─────────────────────────────
+  - id: states
+    uses: ep:ice.states_shapefile
+    params:
+      year: 2024
+      outdir: "data/shapes"
+
+  # ─────────────────────────────
+  # 6. Time-series arrests → JSON
+  # ─────────────────────────────
+  - id: ts_arrests
+    uses: ep:ice.ts_arrests
+    needs: [cleaned_rows]
+
+  # ─────────────────────────────
+  # 7. Choropleth (detentions per state) → GeoJSON
+  # ─────────────────────────────
+  - id: choropleth
+    uses: ep:ice.choropleth
+    needs: [cleaned_rows, states]
+    params:
+      shapefile: "data/shapes/tl_2024_us_state.shp"
+
+  # ─────────────────────────────
+  # 8. Feature importance (ML) → JSON
+  # ─────────────────────────────
+  - id: feat_imp
+    uses: ep:ice.feature_importance
+    needs: [cleaned_rows]
+
+  # ─────────────────────────────
+  # 9. Pipeline events sample → JSON
+  # ─────────────────────────────
+  - id: events_merged
+    uses: ep:ice.pipeline_events_merged
+    needs: [cleaned_sink]
+    params:
+      cleaned_dir: "data/ice/clean"
+      outfile: "out/pipeline_events_sample.json"
+      sample_n: 100000
+
