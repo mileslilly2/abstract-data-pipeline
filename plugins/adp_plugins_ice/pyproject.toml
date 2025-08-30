@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69","wheel"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,13 +9,25 @@ description = "ADP plug-ins for ICE detention & enforcement datasets."
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "pandas>=2.1",
-    "openpyxl>=3.1"
+  "pandas>=2.1",
+  "openpyxl>=3.1"
 ]
 
+[project.optional-dependencies]
+geo = ["geopandas"]
+ml  = ["scikit-learn", "xgboost"]
+
 [project.entry-points."adp.plugins"]
-ice_excel = "adp_plugins.ice.ice_excel:IceExcelSource"
+ice.download_zip           = "adp.plugins.ice:DownloadIceZip"
+ice.local_files            = "adp.plugins.ice:LocalExcelFiles"
+ice.detect_headers         = "adp.plugins.ice:DetectHeaderAndRead"
+ice.csv_sink               = "adp.plugins.ice:CsvSink"
+ice.states_shapefile       = "adp.plugins.ice:DownloadStatesShapefile"
+ice.ts_arrests             = "adp.plugins.ice:TimeSeriesArrests"
+ice.choropleth             = "adp.plugins.ice:DetentionsChoropleth"
+ice.feature_importance     = "adp.plugins.ice:FeatureImportanceRemoval"
+ice.pipeline_events        = "adp.plugins.ice:PipelineEventsSample"
+ice.pipeline_events_merged = "adp.plugins.ice:PipelineEventsMerged"
 
 [tool.setuptools]
-packages = { find = { where = ["."] } }
-include-package-data = false
+packages = ["adp"]
