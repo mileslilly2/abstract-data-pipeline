@@ -19,16 +19,16 @@ geo = ["geopandas"]
 ml  = ["scikit-learn", "xgboost"]
 
 [project.entry-points."adp.plugins"]
-ice.download_zip           = "adp_plugins.ice.ice:DownloadIceZip"
-ice.local_files            = "adp_plugins.ice.ice:LocalExcelFiles"
-ice.detect_headers         = "adp_plugins.ice.ice:DetectHeaderAndRead"
-ice.csv_sink               = "adp_plugins.ice.ice:CsvSink"
-ice.states_shapefile       = "adp_plugins.ice.ice:DownloadStatesShapefile"
-ice.ts_arrests             = "adp_plugins.ice.ice:TimeSeriesArrests"
-ice.choropleth             = "adp_plugins.ice.ice:DetentionsChoropleth"
-ice.feature_importance     = "adp_plugins.ice.ice:FeatureImportanceRemoval"
-ice.pipeline_events        = "adp_plugins.ice.ice:PipelineEventsSample"
-ice.pipeline_events_merged = "adp_plugins.ice.ice:PipelineEventsMerged"
+ice.download_zip           = "adp_plugins.ice.ice_data:DownloadIceZip"
+ice.local_files            = "adp_plugins.ice.ice_data:LocalExcelFiles"
+ice.detect_headers         = "adp_plugins.ice.ice_data:DetectHeaderAndRead"
+ice.csv_sink               = "adp_plugins.ice.ice_data:CsvSink"
+ice.states_shapefile       = "adp_plugins.ice.ice_data:DownloadStatesShapefile"
+ice.ts_arrests             = "adp_plugins.ice.ice_data:TimeSeriesArrests"
+ice.choropleth             = "adp_plugins.ice.ice_data:DetentionsChoropleth"
+ice.feature_importance     = "adp_plugins.ice.ice_data:FeatureImportanceRemoval"
+ice.pipeline_events        = "adp_plugins.ice.ice_data:PipelineEventsSample"
+ice.pipeline_events_merged = "adp_plugins.ice.ice_data:PipelineEventsMerged"
 
 [tool.setuptools.packages.find]
 where = ["."]
