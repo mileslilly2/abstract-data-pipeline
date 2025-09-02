@@ -1,4 +1,4 @@
-from adp.core.base import Source, Transform, Sink, Context, Record
+from adp.core.base import Source, Transform, Sink, Context, Record, Batch
 from pathlib import Path
 import pandas as pd, geopandas as gpd, re, requests, zipfile, io, json
 from typing import Iterator
@@ -367,3 +367,30 @@ class PipelineEventsMerged(Transform):
         events.to_json(outfile, orient="records", date_format="iso")
         ctx.log.info(f"[ice.events_merged] wrote {outfile} with {len(events)} rows")
         yield {"outfile": str(outfile), "rows": len(events)}
+
+
+
+class XlsxToCsv(Source):
+    """
+    Convert all .xlsx files in a folder into .csv.
+    
+    Params:
+      - folder (str): input folder containing Excel files
+      - outdir (str): where to write CSV files (default: same folder)
+    """
+    def run(self, ctx: Context) -> Batch:
+        folder = Path(self.kw.get("folder", ctx.workdir / "data/ice/raw"))
+        outdir = Path(self.kw.get("outdir", folder))
+        outdir.mkdir(parents=True, exist_ok=True)
+
+        ctx.log.info(f"[ice.xlsx_to_csv] Converting .xlsx → .csv in {folder}")
+
+        for fp in folder.glob("*.xlsx"):
+            try:
+                df = pd.read_excel(fp, engine="openpyxl")
+                csv_path = outdir / (fp.stem + ".csv")
+                df.to_csv(csv_path, index=False)
+                ctx.log.info(f"[ice.xlsx_to_csv] {fp.name} → {csv_path.name}")
+                yield {"xlsx": str(fp), "csv": str(csv_path)}
+            except Exception as e:
+                ctx.log.error(f"[ice.xlsx_to_csv] Failed on {fp}: {e}")

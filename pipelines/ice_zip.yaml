@@ -1,7 +1,7 @@
 version: 1
 steps:
   # ─────────────────────────────
-  # 1. Download raw ICE spreadsheets
+  # 1. Download raw ICE spreadsheets (ZIP)
   # ─────────────────────────────
   - id: ice_zip
     uses: ep:ice.download_zip
@@ -10,23 +10,33 @@ steps:
       outdir: "data/ice/raw"   # extract ZIP here
 
   # ─────────────────────────────
-  # 2. List Excel files from the extracted ZIP
+  # 2. Convert Excel files → CSV
   # ─────────────────────────────
-  - id: xls_files
-    uses: ep:ice.local_files
+  - id: convert_csv
+    uses: ep:ice.xlsx_to_csv
     needs: [ice_zip]
     params:
-      folder: "data/ice/raw/ice_release_jul2025"
+      folder: "data/ice/raw/ice_release_jul2025"   # where ZIP extracted
+      outdir: "data/ice/csv"                       # where to write CSVs
 
   # ─────────────────────────────
-  # 3. Clean Excel → normalized rows
+  # 3. List CSV files (instead of Excel)
+  # ─────────────────────────────
+  - id: csv_files
+    uses: ep:ice.local_files
+    needs: [convert_csv]
+    params:
+      folder: "data/ice/csv"
+
+  # ─────────────────────────────
+  # 4. Clean CSV → normalized rows
   # ─────────────────────────────
   - id: cleaned_rows
     uses: ep:ice.detect_headers
-    needs: [xls_files]
+    needs: [csv_files]
 
   # ─────────────────────────────
-  # 4. Write out both CSV + JSON per file
+  # 5. Write out both CSV + JSON per file
   # ─────────────────────────────
   - id: cleaned_sink
     uses: ep:ice.csv_sink
@@ -35,7 +45,7 @@ steps:
       outdir: "data/ice/clean"
 
   # ─────────────────────────────
-  # 5. Download TIGER shapefile
+  # 6. Download TIGER shapefile
   # ─────────────────────────────
   - id: states
     uses: ep:ice.states_shapefile
@@ -44,14 +54,14 @@ steps:
       outdir: "data/shapes"
 
   # ─────────────────────────────
-  # 6. Time-series arrests → JSON
+  # 7. Time-series arrests → JSON
   # ─────────────────────────────
   - id: ts_arrests
     uses: ep:ice.ts_arrests
     needs: [cleaned_rows]
 
   # ─────────────────────────────
-  # 7. Choropleth (detentions per state) → GeoJSON
+  # 8. Choropleth (detentions per state) → GeoJSON
   # ─────────────────────────────
   - id: choropleth
     uses: ep:ice.choropleth
@@ -60,14 +70,14 @@ steps:
       shapefile: "data/shapes/tl_2024_us_state.shp"
 
   # ─────────────────────────────
-  # 8. Feature importance (ML) → JSON
+  # 9. Feature importance (ML) → JSON
   # ─────────────────────────────
   - id: feat_imp
     uses: ep:ice.feature_importance
     needs: [cleaned_rows]
 
   # ─────────────────────────────
-  # 9. Pipeline events sample → JSON
+  # 10. Pipeline events sample → JSON
   # ─────────────────────────────
   - id: events_merged
     uses: ep:ice.pipeline_events_merged
@@ -76,4 +86,3 @@ steps:
       cleaned_dir: "data/ice/clean"
       outfile: "out/pipeline_events_sample.json"
       sample_n: 100000
-

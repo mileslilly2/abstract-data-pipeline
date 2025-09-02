@@ -27,6 +27,8 @@ ml  = ["scikit-learn", "xgboost"]
 "ice.feature_importance"     = "adp_plugins.ice.ice_data:FeatureImportanceRemoval"
 "ice.pipeline_events"        = "adp_plugins.ice.ice_data:PipelineEventsSample"
 "ice.pipeline_events_merged" = "adp_plugins.ice.ice_data:PipelineEventsMerged"
+"ice.xlsx_to_csv"             = "adp_plugins.ice.ice_data:XlsxToCsv"
+
 
 [tool.setuptools.packages.find]
 where = ["."]
