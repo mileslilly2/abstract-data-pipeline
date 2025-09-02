@@ -1,0 +1,7 @@
+version: 1
+steps:
+  - id: states
+    uses: ep:ice.states_shapefile
+    params:
+      year: 2024
+      outdir: "data/shapes"
