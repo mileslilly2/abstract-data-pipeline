@@ -6,6 +6,32 @@ import certifi
 import ftplib, io, zipfile
 
 
+class DownloadIceZip(Source):
+    """aaa
+    Download and unzip an ICE release ZIP archive.
+
+    Params:
+      - url (str): direct URL to the ZIP file
+      - outdir (str): directory to extract into (default: data/ice/raw)
+    """
+    def run(self, ctx: Context) -> Iterator[Record]:
+        url = self.kw.get("url")
+        if not url:
+            raise ValueError("DownloadIceZip requires a 'url' parameter")
+        outdir = Path(self.kw.get("outdir", ctx.workdir / "data/ice/raw"))
+        outdir.mkdir(parents=True, exist_ok=True)
+
+        ctx.log.info(f"[ice.download_zip] Downloading {url}")
+        r = requests.get(url, timeout=60)
+        r.raise_for_status()
+
+        ctx.log.info(f"[ice.download_zip] Extracting to {outdir}")
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+            zf.extractall(outdir)
+
+        # Return list of extracted files
+        files = [str(p) for p in outdir.glob("**/*") if p.is_file()]
+        yield {"outdir": str(outdir), "files": files}
 
 
 class DownloadStatesShapefile(Source):
