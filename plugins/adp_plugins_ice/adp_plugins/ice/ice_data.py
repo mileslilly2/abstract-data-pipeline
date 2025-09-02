@@ -1,62 +1,41 @@
-from adp.core.base import Source, Transform, Sink, Context, Record
+from adp.core.base import Source, Transform, Sink, Context, Record, Batch
 from pathlib import Path
 import pandas as pd, geopandas as gpd, re, requests, zipfile, io, json
 from typing import Iterator
+import certifi
+import ftplib, io, zipfile
+
+
 
 
 class DownloadStatesShapefile(Source):
-    """
-    Download and unzip TIGER/Line US state shapefile.
+    """Download and unzip TIGER/Line US state shapefile (via FTP)."""
 
-    Params:
-      - year (int, default=2024): TIGER release year
-      - outdir (str): directory to extract shapefiles into (default: data/shapes)
-    """
     def run(self, ctx: Context) -> Iterator[Record]:
         year = int(self.kw.get("year", 2024))
-        outdir = Path(self.kw.get("outdir", ctx.workdir / "data/shapes"))
+        outdir = Path(self.kw.get("outdir", ctx.workdir / "shapes"))
         outdir.mkdir(parents=True, exist_ok=True)
 
-        url = f"https://www2.census.gov/geo/tiger/TIGER{year}/STATE/tl_{year}_us_state.zip"
-        ctx.log.info(f"[ice.states_shapefile] Downloading {url}")
+        # Connect to FTP
+        ftp = ftplib.FTP("ftp2.census.gov")
+        ftp.login()  # anonymous by default
 
-        r = requests.get(url, timeout=60)
-        r.raise_for_status()
+        path = f"/geo/tiger/TIGER{year}/STATE/tl_{year}_us_state.zip"
+        ctx.log.info(f"[ice.states_shapefile] FTP GET {path}")
 
-        ctx.log.info(f"[ice.states_shapefile] Extracting → {outdir}")
-        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        # Download to memory
+        bio = io.BytesIO()
+        ftp.retrbinary(f"RETR {path}", bio.write)
+        ftp.quit()
+
+        # Extract ZIP
+        bio.seek(0)
+        with zipfile.ZipFile(bio) as zf:
             zf.extractall(outdir)
 
-        shp_path = outdir / f"tl_{year}_us_state.shp"
-        yield {"year": year, "outdir": str(outdir), "shapefile": str(shp_path)}
-
-
-class DownloadIceZip(Source):
-    """
-    Download and unzip an ICE release ZIP archive.
-
-    Params:
-      - url (str): direct URL to the ZIP file
-      - outdir (str): directory to extract into (default: data/ice/raw)
-    """
-    def run(self, ctx: Context) -> Iterator[Record]:
-        url = self.kw.get("url")
-        if not url:
-            raise ValueError("DownloadIceZip requires a 'url' parameter")
-        outdir = Path(self.kw.get("outdir", ctx.workdir / "data/ice/raw"))
-        outdir.mkdir(parents=True, exist_ok=True)
-
-        ctx.log.info(f"[ice.download_zip] Downloading {url}")
-        r = requests.get(url, timeout=60)
-        r.raise_for_status()
-
-        ctx.log.info(f"[ice.download_zip] Extracting to {outdir}")
-        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
-            zf.extractall(outdir)
-
-        # Return list of extracted files
-        files = [str(p) for p in outdir.glob("**/*") if p.is_file()]
-        yield {"outdir": str(outdir), "files": files}
+        shp = outdir / f"tl_{year}_us_state.shp"
+        ctx.log.info(f"[ice.states_shapefile] Extraction complete: {shp}")
+        yield {"shp": str(shp)}
 
 
 class LocalExcelFiles(Source):
@@ -161,21 +140,7 @@ class CsvSink(Sink):
 #  Download shapefiles
 # ─────────────────────────────────────────────
 
-class DownloadStatesShapefile(Source):
-    """Download and unzip TIGER/Line US state shapefile."""
-    def run(self, ctx: Context):
-        year = int(self.kw.get("year", 2024))
-        outdir = Path(self.kw.get("outdir", ctx.workdir/"shapes"))
-        outdir.mkdir(parents=True, exist_ok=True)
-        url = f"https://www2.census.gov/geo/tiger/TIGER{year}/STATE/tl_{year}_us_state.zip"
 
-        r = requests.get(url, timeout=60)
-        r.raise_for_status()
-        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
-            zf.extractall(outdir)
-
-        shp = outdir / f"tl_{year}_us_state.shp"
-        yield {"shp": str(shp)}
 
 # ─────────────────────────────────────────────
 #  Analysis transforms
@@ -367,3 +332,30 @@ class PipelineEventsMerged(Transform):
         events.to_json(outfile, orient="records", date_format="iso")
         ctx.log.info(f"[ice.events_merged] wrote {outfile} with {len(events)} rows")
         yield {"outfile": str(outfile), "rows": len(events)}
+
+
+
+class XlsxToCsv(Source):
+    """
+    Convert all .xlsx files in a folder into .csv.
+    
+    Params:
+      - folder (str): input folder containing Excel files
+      - outdir (str): where to write CSV files (default: same folder)
+    """
+    def run(self, ctx: Context) -> Batch:
+        folder = Path(self.kw.get("folder", ctx.workdir / "data/ice/raw"))
+        outdir = Path(self.kw.get("outdir", folder))
+        outdir.mkdir(parents=True, exist_ok=True)
+
+        ctx.log.info(f"[ice.xlsx_to_csv] Converting .xlsx → .csv in {folder}")
+
+        for fp in folder.glob("*.xlsx"):
+            try:
+                df = pd.read_excel(fp, engine="openpyxl")
+                csv_path = outdir / (fp.stem + ".csv")
+                df.to_csv(csv_path, index=False)
+                ctx.log.info(f"[ice.xlsx_to_csv] {fp.name} → {csv_path.name}")
+                yield {"xlsx": str(fp), "csv": str(csv_path)}
+            except Exception as e:
+                ctx.log.error(f"[ice.xlsx_to_csv] Failed on {fp}: {e}")

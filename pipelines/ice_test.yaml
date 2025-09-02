@@ -1,0 +1,20 @@
+version: 1
+
+steps:
+  - id: download
+    uses: adp_plugins.ice.ice_data:DownloadIceZip
+    params:
+      url: https://example.com/ice_data.zip
+      outfile: ice_data.zip
+
+  - id: arrests
+    uses: adp_plugins.ice.ice_data:TimeSeriesArrests
+    params:
+      infile: ice_data.zip
+      outfile: arrests.csv
+
+  - id: sink
+    uses: adp_plugins.ice.ice_data:CsvSink
+    params:
+      infile: arrests.csv
+      outfile: final_output.csv

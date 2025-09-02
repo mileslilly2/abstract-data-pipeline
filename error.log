@@ -1,0 +1,84 @@
+╭─────────────────────────────────────────────── Traceback (most recent call last) ────────────────────────────────────────────────╮
+│ /home/mileslilly2/abstract-data-pipeline-1/adp/core/cli.py:27 in run                                                             │
+│                                                                                                                                  │
+│   24 │   if not spec_path.exists():                                                                                              │
+│   25 │   │   typer.echo(f"❌ Spec not found: {spec}")                                                                            │
+│   26 │   │   raise typer.Exit(code=2)                                                                                            │
+│ ❱ 27 │   run_pipeline(spec_path, workdir=workdir)                                                                                │
+│   28                                                                                                                             │
+│   29                                                                                                                             │
+│   30 @app.command("list-plugins")                                                                                                │
+│                                                                                                                                  │
+│ ╭───────────────────── locals ─────────────────────╮                                                                             │
+│ │      spec = 'pipelines/ice_test.yaml'            │                                                                             │
+│ │ spec_path = PosixPath('pipelines/ice_test.yaml') │                                                                             │
+│ │   workdir = 'work'                               │                                                                             │
+│ ╰──────────────────────────────────────────────────╯                                                                             │
+│                                                                                                                                  │
+│ /home/mileslilly2/abstract-data-pipeline-1/adp/core/runner.py:128 in run_pipeline                                                │
+│                                                                                                                                  │
+│   125 │   │   │   │   │   raise RuntimeError(f"Sink step {step['id']} has no input rows")                                        │
+│   126 │   │   │   │   comp.run(ctx, rows)                                                                                        │
+│   127 │   │   │   else:                                                                                                          │
+│ ❱ 128 │   │   │   │   raise TypeError(f"Unsupported component type: {Cls}")                                                      │
+│   129 │   │                                                                                                                      │
+│   130 │   │   ctx.log.info("✅ steps pipeline done.")                                                                            │
+│   131                                                                                                                            │
+│                                                                                                                                  │
+│ ╭───────────────────────────────────────────────── locals ─────────────────────────────────────────────────╮                     │
+│ │      comp = <adp_plugins.ice.ice_data.DownloadIceZip object at 0x79eb40af0ef0>                           │                     │
+│ │      conf = {                                                                                            │                     │
+│ │             │   'version': 1,                                                                            │                     │
+│ │             │   'steps': [                                                                               │                     │
+│ │             │   │   {                                                                                    │                     │
+│ │             │   │   │   'id': 'download',                                                                │                     │
+│ │             │   │   │   'uses': 'adp_plugins.ice.ice_data:DownloadIceZip',                               │                     │
+│ │             │   │   │   'params': {                                                                      │                     │
+│ │             │   │   │   │   'url': 'https://example.com/ice_data.zip',                                   │                     │
+│ │             │   │   │   │   'outfile': 'ice_data.zip'                                                    │                     │
+│ │             │   │   │   }                                                                                │                     │
+│ │             │   │   },                                                                                   │                     │
+│ │             │   │   {                                                                                    │                     │
+│ │             │   │   │   'id': 'arrests',                                                                 │                     │
+│ │             │   │   │   'uses': 'adp_plugins.ice.ice_data:TimeSeriesArrests',                            │                     │
+│ │             │   │   │   'params': {'infile': 'ice_data.zip', 'outfile': 'arrests.csv'}                   │                     │
+│ │             │   │   },                                                                                   │                     │
+│ │             │   │   {                                                                                    │                     │
+│ │             │   │   │   'id': 'sink',                                                                    │                     │
+│ │             │   │   │   'uses': 'adp_plugins.ice.ice_data:CsvSink',                                      │                     │
+│ │             │   │   │   'params': {'infile': 'arrests.csv', 'outfile': 'final_output.csv'}               │                     │
+│ │             │   │   }                                                                                    │                     │
+│ │             │   ]                                                                                        │                     │
+│ │             }                                                                                            │                     │
+│ │       ctx = Context(                                                                                     │                     │
+│ │             │   workdir=PosixPath('work'),                                                               │                     │
+│ │             │   outdir=PosixPath('work/out'),                                                            │                     │
+│ │             │   state={},                                                                                │                     │
+│ │             │   log=_Logger(),                                                                           │                     │
+│ │             │   config={},                                                                               │                     │
+│ │             │   env={                                                                                    │                     │
+│ │             │   │   'SHELL': '/bin/bash',                                                                │                     │
+│ │             │   │   'CLOUD_CODE_CLOUD_SHELL_AUTHENTICATION': 'true',                                     │                     │
+│ │             │   │   'COLORTERM': 'truecolor',                                                            │                     │
+│ │             │   │   'TERM_PROGRAM_VERSION': '1.100.3-cde',                                               │                     │
+│ │             │   │   'GEMINI_CLI_IDE_SERVER_PORT': '35747',                                               │                     │
+│ │             │   │   'HISTSIZE': '1000',                                                                  │                     │
+│ │             │   │   'EDITOR_IN_CLOUD_SHELL': 'true',                                                     │                     │
+│ │             │   │   'JAVA_HOME': '/usr/lib/jvm/java-17-openjdk-amd64',                                   │                     │
+│ │             │   │   'CLOUD_SHELL': 'true',                                                               │                     │
+│ │             │   │   'DEVSHELL_PROJECT_ID': '',                                                           │                     │
+│ │             │   │   ... +54                                                                              │                     │
+│ │             │   }                                                                                        │                     │
+│ │             )                                                                                            │                     │
+│ │    params = {'url': 'https://example.com/ice_data.zip', 'outfile': 'ice_data.zip'}                       │                     │
+│ │      rows = None                                                                                         │                     │
+│ │ spec_path = PosixPath('pipelines/ice_test.yaml')                                                         │                     │
+│ │      step = {                                                                                            │                     │
+│ │             │   'id': 'download',                                                                        │                     │
+│ │             │   'uses': 'adp_plugins.ice.ice_data:DownloadIceZip',                                       │                     │
+│ │             │   'params': {'url': 'https://example.com/ice_data.zip', 'outfile': 'ice_data.zip'}         │                     │
+│ │             }                                                                                            │                     │
+│ │   workdir = 'work'                                                                                       │                     │
+│ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────╯                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+TypeError: Unsupported component type: <class 'adp_plugins.ice.ice_data.DownloadIceZip'>
