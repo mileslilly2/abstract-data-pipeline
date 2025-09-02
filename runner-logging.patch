@@ -1,0 +1,56 @@
+cat > runner-logging.patch <<'EOF'
+diff --git a/adp/core/runner.py b/adp/core/runner.py
+--- a/adp/core/runner.py
++++ b/adp/core/runner.py
+@@ def run_pipeline(spec_path: str | Path, *, workdir: str | Path = ".") -> None:
+-    if "steps" in conf:
+-        rows = None
+-        for step in conf["steps"]:
+-            Cls, params = _load_component(step)
+-            comp = Cls(**params)
+-
+-            if isinstance(comp, Source):
+-                rows = comp.run(ctx)
+-            elif isinstance(comp, Transform):
+-                if rows is None:
+-                    raise RuntimeError(f"Transform step {step['id']} has no input rows")
+-                rows = comp.run(ctx, rows)
+-            elif isinstance(comp, Sink):
+-                if rows is None:
+-                    raise RuntimeError(f"Sink step {step['id']} has no input rows")
+-                comp.run(ctx, rows)
+-            else:
+-                raise TypeError(f"Unsupported component type: {Cls}")
+-
+-        ctx.log.info("✅ steps pipeline done.")
++    if "steps" in conf:
++        rows = None
++        for step in conf["steps"]:
++            step_id = step.get("id", "<no-id>")
++            ctx.log.info(f"▶ Running step: {step_id} ({step.get('uses')})")
++
++            Cls, params = _load_component(step)
++            comp = Cls(**params)
++
++            if isinstance(comp, Source):
++                rows = list(comp.run(ctx))
++                ctx.log.info(f"   ↳ {step_id} produced {len(rows)} records")
++                for r in rows[:3]:
++                    ctx.log.info(f"   sample: {r}")
++            elif isinstance(comp, Transform):
++                if rows is None:
++                    raise RuntimeError(f"Transform step {step_id} has no input rows")
++                rows = list(comp.run(ctx, rows))
++                ctx.log.info(f"   ↳ {step_id} produced {len(rows)} records")
++                for r in rows[:3]:
++                    ctx.log.info(f"   sample: {r}")
++            elif isinstance(comp, Sink):
++                if rows is None:
++                    raise RuntimeError(f"Sink step {step_id} has no input rows")
++                result = comp.run(ctx, rows)
++                ctx.log.info(f"   ↳ {step_id} wrote {result}")
++            else:
++                raise TypeError(f"Unsupported component type: {Cls}")
++
++        ctx.log.info("✅ steps pipeline done.")
+EOF
