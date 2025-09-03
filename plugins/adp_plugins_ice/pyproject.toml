@@ -18,9 +18,10 @@ ml  = ["scikit-learn", "xgboost"]
 
 [project.entry-points."adp.plugins"]
 "ice.download_zip"           = "adp_plugins.ice.ice_data:DownloadIceZip"
-"ice.local_files"            = "adp_plugins.ice.ice_data:LocalExcelFiles"
+"ice.local_files"            = "adp_plugins.ice.ice_data:LocalFiles"
 "ice.detect_headers"         = "adp_plugins.ice.ice_data:DetectHeaderAndRead"
 "ice.csv_sink"               = "adp_plugins.ice.ice_data:CsvSink"
+"ice.summary_json"           = "adp_plugins.ice.transforms:SummaryJsonTransform"
 "ice.states_shapefile"       = "adp_plugins.ice.ice_data:DownloadStatesShapefile"
 "ice.ts_arrests"             = "adp_plugins.ice.ice_data:TimeSeriesArrests"
 "ice.choropleth"             = "adp_plugins.ice.ice_data:DetentionsChoropleth"

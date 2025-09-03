@@ -4,6 +4,10 @@ import pandas as pd, geopandas as gpd, re, requests, zipfile, io, json
 from typing import Iterator
 import certifi
 import ftplib, io, zipfile
+import os
+from collections import Counter
+import datetime as dt
+
 
 
 class DownloadIceZip(Source):
@@ -32,6 +36,7 @@ class DownloadIceZip(Source):
         # Return list of extracted files
         files = [str(p) for p in outdir.glob("**/*") if p.is_file()]
         yield {"outdir": str(outdir), "files": files}
+        
 
 
 class DownloadStatesShapefile(Source):
@@ -197,15 +202,42 @@ class LocalExcelFiles(Source):
         for fp in folder.glob("*.xls*"):
             yield {"path": str(fp)}
 
+
+
+
 class CsvSink(Sink):
-    """Dump records to a CSV+JSON pair."""
+    """Dump records to a CSV file (streaming)."""
     def run(self, ctx: Context, rows):
         outbase = Path(self.kw.get("outfile", ctx.outdir / "clean"))
         outbase.parent.mkdir(parents=True, exist_ok=True)
-        df = pd.DataFrame(list(rows))
-        df.to_csv(str(outbase) + ".csv", index=False)
-        df.to_json(str(outbase) + ".json", orient="records")
-        return {"csv": str(outbase)+".csv", "json": str(outbase)+".json"}
+
+        csv_path = str(outbase) + ".csv"
+        chunksize = int(self.kw.get("chunksize", 50000))
+
+        buffer = []
+        total = 0
+        first_chunk = True
+
+        for row in rows:
+            buffer.append(row)
+            if len(buffer) >= chunksize:
+                df = pd.DataFrame(buffer)
+                df.to_csv(csv_path, index=False,
+                          mode="w" if first_chunk else "a",
+                          header=first_chunk)
+                first_chunk = False
+                total += len(buffer)
+                ctx.log.info(f"  ↳ wrote {len(buffer)} rows (total {total})")
+                buffer = []
+
+        if buffer:
+            df = pd.DataFrame(buffer)
+            df.to_csv(csv_path, index=False,
+                      mode="w" if first_chunk else "a",
+                      header=first_chunk)
+            total += len(buffer)
+
+        return {"csv": csv_path}
 
 # ─────────────────────────────────────────────
 #  Download shapefiles
@@ -217,63 +249,83 @@ class CsvSink(Sink):
 #  Analysis transforms
 # ─────────────────────────────────────────────
 
+
 class TimeSeriesArrests(Transform):
-    """Aggregate arrests by month into JSON."""
+    """Aggregate arrests by month into JSON (streaming)."""
     def run(self, ctx: Context, rows):
-        df = pd.DataFrame(list(rows))
+        counts = Counter()
 
-        # ✅ Debug prints go right here, after df is created
-        print("[DEBUG] Columns in cleaned_rows:", df.columns.tolist())
-        print("[DEBUG] First 5 rows:\n", df.head())
+        for row in rows:
+            date_str = row.get("apprehension_date")
+            if not date_str:
+                continue
+            try:
+                d = pd.to_datetime(date_str, errors="coerce")
+            except Exception:
+                continue
+            if pd.isna(d):
+                continue
+            # round to month
+            month_key = dt.date(d.year, d.month, 1).isoformat()
+            counts[month_key] += 1
+            # pass through unchanged if you want
+            yield row  
 
-        if "apprehension_date" not in df.columns:
-            raise KeyError("apprehension_date not in columns")
-
-        df["apprehension_date"] = pd.to_datetime(df["apprehension_date"], errors="coerce")
-        ts = (df.set_index("apprehension_date")
-                .groupby(pd.Grouper(freq="M"))
-                .size()
-                .rename("n_arrests")
-                .to_frame())
+        # convert to DataFrame for output
+        ts = (pd.DataFrame.from_dict(counts, orient="index", columns=["n_arrests"])
+                .sort_index())
         out = ctx.outdir / "timeseries_arrests.json"
         ts.to_json(out, orient="table")
+
+        ctx.log.info(f"TimeSeriesArrests wrote {out} with {len(ts)} months")
         yield {"timeseries": str(out)}
 
-
 class DetentionsChoropleth(Transform):
-    """Join detentions per state with TIGER shapefile to GeoJSON."""
+    """Join detentions per state with TIGER shapefile to GeoJSON (streaming counts)."""
     def run(self, ctx: Context, rows):
-        df = pd.DataFrame(list(rows))
-        if "state" not in df.columns:
-            raise KeyError("state not in columns")
-        counts = df.groupby("state").size().rename("n_detentions").reset_index()
+        from collections import Counter
+
+        # count states without materializing all rows
+        counts = Counter()
+        for row in rows:
+            st = row.get("state")
+            if st:
+                counts[st] += 1
+
+        df = pd.DataFrame.from_dict(counts, orient="index", columns=["n_detentions"]).reset_index()
+        df.columns = ["state", "n_detentions"]
 
         shp = Path(self.kw.get("shapefile"))
         gdf = gpd.read_file(shp)
-        merged = gdf.merge(counts, left_on="STUSPS", right_on="state", how="left")
+
+        merged = gdf.merge(df, left_on="STUSPS", right_on="state", how="left")
         merged["n_detentions"] = merged["n_detentions"].fillna(0).astype(int)
 
         out = ctx.outdir / "detentions_choropleth.geojson"
         merged[["STUSPS","n_detentions","geometry"]].to_file(out, driver="GeoJSON")
+        ctx.log.info(f"[ice.choropleth] wrote {out}")
         yield {"choropleth": str(out)}
-
 
 
 # ─────────────────────────────────────────────
 #  ML feature importance
 # ─────────────────────────────────────────────
-
 class FeatureImportanceRemoval(Transform):
     """
-    Train XGBoost model to predict <=180 day detention and
-    save top-20 feature importances to JSON.
+    Train XGBoost model to predict <=180 day detention.
+    Uses sampling to prevent memory blowups.
     """
     def run(self, ctx: Context, rows):
+        if not self.kw.get("enable_ml", True):
+            ctx.log.info("[ice.feature_importance] Skipped (enable_ml=False)")
+            return  # no output
         from xgboost import XGBClassifier
         from sklearn.model_selection import train_test_split
         from sklearn.metrics import roc_auc_score
 
         df = pd.DataFrame(list(rows))
+
+        # date parsing
         for col in ("book_in_date","book_out_date"):
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors="coerce")
@@ -281,19 +333,23 @@ class FeatureImportanceRemoval(Transform):
         if "book_in_date" not in df.columns or "book_out_date" not in df.columns:
             raise KeyError("Expected book_in_date and book_out_date columns")
 
-        df["removed_180"] = (
-            (df["book_out_date"] - df["book_in_date"]).dt.days.le(180)
-        )
+        df["removed_180"] = (df["book_out_date"] - df["book_in_date"]).dt.days.le(180)
 
         use_cols = self.kw.get("use_cols", ["risk_category","gender","state"])
         X = pd.get_dummies(df[use_cols].fillna("UNK"))
         y = df["removed_180"].astype(int)
 
+        # ✅ sample rows for training
+        max_rows = int(self.kw.get("sample_n", 1000))
+        if len(X) > max_rows:
+            X = X.sample(max_rows, random_state=42)
+            y = y.loc[X.index]
+
         X_train, X_val, y_train, y_val = train_test_split(
             X, y, test_size=0.25, random_state=42
         )
 
-        mdl = XGBClassifier(n_estimators=200, max_depth=3, verbosity=0)
+        mdl = XGBClassifier(n_estimators=3, max_depth=2, tree_method="hist", verbosity=0)
         mdl.fit(X_train, y_train)
         auc = float(roc_auc_score(y_val, mdl.predict_proba(X_val)[:,1]))
 
@@ -303,17 +359,16 @@ class FeatureImportanceRemoval(Transform):
         out = ctx.outdir / "feature_importance_removal.json"
         imp.to_json(out, orient="index")
 
+        ctx.log.info(f"[ice.feature_importance] wrote {out}, auc={auc:.3f}")
         yield {"outfile": str(out), "auc": auc, "n_features": int(imp.shape[0])}
-
 
 # ─────────────────────────────────────────────
 #  Pipeline events (Sankey-style JSON)
 # ─────────────────────────────────────────────
-
 class PipelineEventsSample(Transform):
     """
     Build cross-stage events dataset for Sankey viz.
-    Requires rows from multiple stages (arrests, detainers, detentions, removals).
+    Streams rows to avoid giant DataFrames.
     """
     DEFAULT_DATE_COLS = {
         "arrests": "apprehension_date",
@@ -323,41 +378,32 @@ class PipelineEventsSample(Transform):
     }
 
     def run(self, ctx: Context, rows):
-        df = pd.DataFrame(list(rows))
-        stage = self.kw.get("stage")   # must set in YAML
-        id_col = self.kw.get("id_col","individual_id")
+        stage = self.kw.get("stage")
+        id_col = self.kw.get("id_col", "individual_id")
         date_col = self.kw.get("date_col") or self.DEFAULT_DATE_COLS.get(stage)
-
         if stage is None:
             raise ValueError("stage param required")
-        if id_col not in df.columns or date_col not in df.columns:
-            raise KeyError(f"{stage}: missing {id_col} or {date_col}")
 
-        df = df[[id_col,date_col]].copy()
-        df.columns = ["individual_id","date"]
-        df["stage"] = stage
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        events = []
+        for row in rows:
+            if id_col in row and date_col in row:
+                events.append({
+                    "individual_id": row[id_col],
+                    "date": pd.to_datetime(row[date_col], errors="coerce"),
+                    "stage": stage,
+                })
 
+        df = pd.DataFrame(events).dropna(subset=["date"])
         out = ctx.outdir / f"{stage}_events.json"
         df.to_json(out, orient="records", date_format="iso")
-
+        ctx.log.info(f"[ice.events_sample] wrote {out} with {len(df)} rows")
         yield {"stage": stage, "outfile": str(out), "rows": len(df)}
-
 
 class PipelineEventsMerged(Transform):
     """
-    Collect rows from all four ICE stages and emit a single JSON
-    for Sankey / flow visualization.
-
-    Params:
-      - cleaned_dir (str): folder with *_clean.csv files
-      - patterns (dict[str,str]): stage -> glob pattern
-      - date_cols (dict[str,str]): stage -> date column
-      - id_col (str): identifier column (default: individual_id)
-      - sample_n (int): subsample size (default: 100000)
-      - outfile (str): path to final JSON
+    Collect rows from all ICE stages and emit a single JSON for Sankey viz.
+    Uses chunked reads for memory safety.
     """
-
     DEFAULT_PATTERNS = {
         "arrest": "*Arrests*_clean.csv",
         "detainer": "*Detainers*_clean.csv",
@@ -373,7 +419,6 @@ class PipelineEventsMerged(Transform):
     }
 
     def run(self, ctx: Context, rows):
-        import pandas as pd
         cleaned_dir = Path(self.kw.get("cleaned_dir", ctx.workdir / "data/ice/clean"))
         patterns = {**self.DEFAULT_PATTERNS, **(self.kw.get("patterns") or {})}
         date_cols = {**self.DEFAULT_DATE_COLS, **(self.kw.get("date_cols") or {})}
@@ -386,19 +431,16 @@ class PipelineEventsMerged(Transform):
         for stage, pat in patterns.items():
             matches = list(cleaned_dir.glob(pat))
             if not matches:
-                ctx.log.info(f"[ice.events_merged] no file for stage={stage} pattern={pat}")
                 continue
-            df = pd.read_csv(matches[0])
-            df.columns = df.columns.str.lower().str.strip()
             date_col = date_cols.get(stage)
-            if id_col not in df.columns or date_col not in df.columns:
-                ctx.log.info(f"[ice.events_merged] stage={stage} missing {id_col} or {date_col}")
-                continue
-            slim = df[[id_col, date_col]].copy()
-            slim.columns = ["individual_id", "date"]
-            slim["stage"] = stage
-            slim["date"] = pd.to_datetime(slim["date"], errors="coerce")
-            parts.append(slim)
+
+            # read only needed columns, in chunks
+            for chunk in pd.read_csv(matches[0], usecols=[id_col, date_col],
+                                     chunksize=50000):
+                slim = chunk.rename(columns={id_col: "individual_id", date_col: "date"})
+                slim["stage"] = stage
+                slim["date"] = pd.to_datetime(slim["date"], errors="coerce")
+                parts.append(slim)
 
         if not parts:
             raise RuntimeError("No stages produced events")
@@ -410,7 +452,6 @@ class PipelineEventsMerged(Transform):
         events.to_json(outfile, orient="records", date_format="iso")
         ctx.log.info(f"[ice.events_merged] wrote {outfile} with {len(events)} rows")
         yield {"outfile": str(outfile), "rows": len(events)}
-
 
 
 class XlsxToCsv(Source):

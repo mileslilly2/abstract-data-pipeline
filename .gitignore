@@ -23,9 +23,9 @@ node_modules/
 data/*
 
 # Except pipeline outputs
-!data/output/
-!data/output/**/*.json
-!data/output/**/*.geojson
+!out/
+!out/**/*.json
+!out/**/*.geojson
 
 # Ignore common raw data formats
 *.zip
