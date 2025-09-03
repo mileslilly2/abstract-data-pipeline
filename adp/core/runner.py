@@ -93,7 +93,7 @@ def run_pipeline(spec_path: str | Path, *, workdir: str | Path = ".") -> None:
 
     # ---------- steps mode ----------
     if "steps" in conf:
-        rows = None
+        results: Dict[str, list[Record]] = {}
         for step in conf["steps"]:
             step_id = step.get("id", "<no-id>")
             ctx.log.info(f"▶ Running step: {step_id} ({step.get('uses')})")
@@ -101,24 +101,37 @@ def run_pipeline(spec_path: str | Path, *, workdir: str | Path = ".") -> None:
             Cls, params = _load_component(step)
             comp = Cls(**params)
 
+            # collect inputs from dependencies
+            needs = step.get("needs") or []
+            if not isinstance(needs, list):
+                needs = [needs]
+            if needs:
+                input_rows = []
+                for dep in needs:
+                    if dep not in results:
+                        raise RuntimeError(f"Step {step_id} needs {dep}, but {dep} not yet run")
+                    input_rows.extend(results[dep])
+            else:
+                input_rows = []
+
+            # run component
             if isinstance(comp, Source):
                 rows = list(_sample_rows(comp.run(ctx), 3))
                 ctx.log.info(f"   ↳ {step_id} produced {len(rows)} records")
 
             elif isinstance(comp, Transform):
-                if rows is None:
-                    raise RuntimeError(f"Transform step {step_id} has no input rows")
-                rows = list(_sample_rows(comp.run(ctx, rows), 3))
+                rows = list(_sample_rows(comp.run(ctx, input_rows), 3))
                 ctx.log.info(f"   ↳ {step_id} produced {len(rows)} records")
 
             elif isinstance(comp, Sink):
-                if rows is None:
-                    raise RuntimeError(f"Sink step {step_id} has no input rows")
-                result = comp.run(ctx, rows)
+                result = comp.run(ctx, input_rows)
                 ctx.log.info(f"   ↳ {step_id} wrote {result}")
+                rows = input_rows
 
             else:
                 raise TypeError(f"Unsupported component type: {Cls}")
+
+            results[step_id] = rows
 
         ctx.log.info("✅ steps pipeline done.")
 

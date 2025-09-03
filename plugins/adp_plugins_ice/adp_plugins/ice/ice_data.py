@@ -70,24 +70,26 @@ class LocalExcelFiles(Source):
         folder = Path(self.kw.get("folder", ctx.workdir / "data"))
         for fp in folder.glob("*.xls*"):
             yield {"path": str(fp)}
-
-
 class DetectHeaderAndRead(Transform):
     """
-    Find header row by keyword scan, load DataFrame, normalize columns,
-    drop NaN/unnamed, yield row dicts.
+    Detect header row in CSV, normalize columns, drop unnamed/NaN, yield records.
     """
     def run(self, ctx: Context, rows):
         keys = tuple(self.kw.get("keywords", (
-            "Event Date", "Apprehension Date", "Stay Book In Date Time",
-            "Detainer Issued Date", "Book In Date", "Encounter Date", "Departed Date"
+            "Apprehension Date", "Event Date", "Book In Date",
+            "Detainer Issued Date", "Encounter Date", "Departed Date"
         )))
         look = int(self.kw.get("lookahead", 40))
 
         for r in rows:
             fp = Path(r["path"])
-            # Scan first few rows to detect header
-            sample = pd.read_excel(fp, header=None, nrows=look)
+            if fp.suffix.lower() != ".csv":
+                ctx.log.warn(f"[detect_headers] skipping non-CSV file {fp}")
+                continue
+
+            # --- Step 1: sample first rows to find header ---
+            sample = pd.read_csv(fp, header=None, nrows=look, encoding="utf-8", on_bad_lines="skip")
+
             hdr = 0
             for idx, row in sample.iterrows():
                 row_str = ",".join(str(x) for x in row.values)
@@ -95,29 +97,98 @@ class DetectHeaderAndRead(Transform):
                     hdr = idx
                     break
 
-            # Re-read with detected header
-            df = pd.read_excel(fp, header=hdr, engine="openpyxl")
+            # --- Step 2: load full CSV starting at detected header ---
+            df = pd.read_csv(fp, skiprows=hdr, encoding="utf-8", on_bad_lines="skip")
 
-            # Drop empty cols/rows
+            # --- Step 3: clean DataFrame ---
             df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
 
-            # Normalize column names
             def normalize(c: str) -> str:
-                return re.sub(r'[^0-9a-zA-Z_]+', '', c.strip().replace(" ", "_")).lower()
-            df.columns = [normalize(str(c)) for c in df.columns]
+                c = re.sub(r"\s+", "_", str(c).strip())
+                c = re.sub(r"[^0-9a-zA-Z_]+", "", c)
+                return c.lower()
 
-            # Remove unnamed cols
+            df.columns = [normalize(str(c)) for c in df.columns]
             df = df.loc[:, ~df.columns.str.startswith("unnamed")]
 
+            # --- Debug ---
+            ctx.log.info(f"[detect_headers] {fp.name} → {df.columns.tolist()}")
+
+            # --- Step 4: yield row dicts ---
             for rec in df.to_dict(orient="records"):
                 yield rec
 
+    """
+    Detect header row in Excel or CSV, normalize columns, drop unnamed/NaN, yield records.
+    """
+    def run(self, ctx: Context, rows):
+        keys = tuple(self.kw.get("keywords", (
+            "Apprehension Date", "Event Date", "Stay Book In Date Time",
+            "Detainer Issued Date", "Book In Date", "Encounter Date", "Departed Date"
+        )))
+        look = int(self.kw.get("lookahead", 40))
 
+        for r in rows:
+            fp = Path(r["path"])
 
+            # --- Step 1: sample first rows (Excel vs CSV) ---
+            if fp.suffix.lower() == ".csv":
+                sample = pd.read_csv(fp, header=None, nrows=look, encoding="utf-8", on_bad_lines="skip")
+            else:
+                sample = pd.read_excel(fp, header=None, nrows=look, engine="openpyxl")
+
+            # --- Step 2: find header row ---
+            hdr = 0
+            for idx, row in sample.iterrows():
+                row_str = ",".join(str(x) for x in row.values)
+                if any(k.lower() in row_str.lower() for k in keys):
+                    hdr = idx
+                    break
+
+            # --- Step 3: load full file starting at detected header ---
+            if fp.suffix.lower() == ".csv":
+                df = pd.read_csv(fp, skiprows=hdr, encoding="utf-8", on_bad_lines="skip")
+            else:
+                df = pd.read_excel(fp, skiprows=hdr, engine="openpyxl")
+
+            # --- Step 4: clean DataFrame ---
+            df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
+
+            def normalize(c: str) -> str:
+                # Replace any whitespace with underscore
+                c = re.sub(r"\s+", "_", str(c).strip())
+                # Keep only letters/numbers/underscores
+                c = re.sub(r"[^0-9a-zA-Z_]+", "", c)
+                return c.lower()
+
+            df.columns = [normalize(str(c)) for c in df.columns]
+            df = df.loc[:, ~df.columns.str.startswith("unnamed")]
+
+            # --- Debug ---
+            print(f"[DEBUG] {fp.name} → {df.columns.tolist()}")
+
+            # --- Step 5: yield row dicts ---
+            for rec in df.to_dict(orient="records"):
+                yield rec
 
 # ─────────────────────────────────────────────
 #  Excel ingest / clean
 # ─────────────────────────────────────────────
+
+class LocalFiles(Source):
+    """Yield paths to files matching a glob pattern (default: *.csv)."""
+    def run(self, ctx: Context):
+        folder = Path(self.kw.get("folder", ctx.workdir / "data/ice/csv"))
+        pattern = self.kw.get("pattern", "*.csv")
+        folder = Path(folder)
+        if not folder.exists():
+            ctx.log.warn(f"[local_files] folder not found: {folder}")
+            return
+        files = sorted(folder.glob(pattern))
+        for fp in files:
+            if fp.is_file():
+                yield {"path": str(fp)}
+
 
 class LocalExcelFiles(Source):
     """Yield paths to *.xls[x] in a folder."""
@@ -125,32 +196,6 @@ class LocalExcelFiles(Source):
         folder = Path(self.kw.get("folder", ctx.workdir / "data"))
         for fp in folder.glob("*.xls*"):
             yield {"path": str(fp)}
-
-class DetectHeaderAndRead(Transform):
-    """Detect header row, normalize cols, drop unnamed/NaN, yield records."""
-    def run(self, ctx: Context, rows):
-        keys = tuple(self.kw.get("keywords", ("Date","Area of Responsibility","State")))
-        look = int(self.kw.get("lookahead", 40))
-
-        for r in rows:
-            fp = Path(r["path"])
-            sample = pd.read_excel(fp, header=None, nrows=look)
-            hdr = 0
-            for idx, row in sample.iterrows():
-                row_str = ",".join(str(x) for x in row.values)
-                if any(k.lower() in row_str.lower() for k in keys):
-                    hdr = idx; break
-
-            df = pd.read_excel(fp, skiprows=hdr, engine="openpyxl")
-            df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
-
-            def normalize(c): 
-                return re.sub(r'[^0-9a-zA-Z_]+', '', c.strip().replace(" ", "_")).lower()
-            df.columns = [normalize(str(c)) for c in df.columns]
-            df = df.loc[:, ~df.columns.str.startswith("unnamed")]
-
-            for rec in df.to_dict(orient="records"):
-                yield rec
 
 class CsvSink(Sink):
     """Dump records to a CSV+JSON pair."""
@@ -176,8 +221,14 @@ class TimeSeriesArrests(Transform):
     """Aggregate arrests by month into JSON."""
     def run(self, ctx: Context, rows):
         df = pd.DataFrame(list(rows))
+
+        # ✅ Debug prints go right here, after df is created
+        print("[DEBUG] Columns in cleaned_rows:", df.columns.tolist())
+        print("[DEBUG] First 5 rows:\n", df.head())
+
         if "apprehension_date" not in df.columns:
             raise KeyError("apprehension_date not in columns")
+
         df["apprehension_date"] = pd.to_datetime(df["apprehension_date"], errors="coerce")
         ts = (df.set_index("apprehension_date")
                 .groupby(pd.Grouper(freq="M"))
@@ -187,6 +238,7 @@ class TimeSeriesArrests(Transform):
         out = ctx.outdir / "timeseries_arrests.json"
         ts.to_json(out, orient="table")
         yield {"timeseries": str(out)}
+
 
 class DetentionsChoropleth(Transform):
     """Join detentions per state with TIGER shapefile to GeoJSON."""

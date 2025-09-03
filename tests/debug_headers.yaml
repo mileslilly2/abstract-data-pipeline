@@ -1,0 +1,22 @@
+version: 1
+steps:
+  # 1. Convert Excel files → CSV
+  - id: convert_csv
+    uses: ep:ice.xlsx_to_csv
+    params:
+      folder: "data/ice/raw/ice_release_jul2025"
+      outdir: "data/ice/csv"
+
+  # 2. List CSV files
+  - id: csv_files
+    class: adp_plugins.ice.ice_data:LocalFiles
+    params:
+      folder: "data/ice/csv"
+      pattern: "*.csv"
+
+  # 3. Clean CSV → normalized rows
+  - id: cleaned_rows
+    uses: ep:ice.detect_headers
+    needs: [csv_files]
+    params:
+      lookahead: 40
