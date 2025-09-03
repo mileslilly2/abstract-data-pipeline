@@ -109,9 +109,18 @@ class DetectHeaderAndRead(Transform):
             df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
 
             def normalize(c: str) -> str:
+                # Replace any whitespace with underscore
                 c = re.sub(r"\s+", "_", str(c).strip())
+                # Keep only letters/numbers/underscores
                 c = re.sub(r"[^0-9a-zA-Z_]+", "", c)
-                return c.lower()
+                c = c.lower()
+                # Map ICE raw headers to canonical schema
+                rename_map = {
+                    "unique_identifier": "individual_id",
+                    "detainer_prepare_date": "detainer_issued_date",
+                    "stay_book_in_date_time": "book_in_date",
+                }
+                return rename_map.get(c, c)
 
             df.columns = [normalize(str(c)) for c in df.columns]
             df = df.loc[:, ~df.columns.str.startswith("unnamed")]
