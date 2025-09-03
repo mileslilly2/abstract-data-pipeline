@@ -53,7 +53,7 @@ steps:
     uses: ep:ice.csv_sink
     needs: [cleaned_rows]
     params:
-      outdir: "data/ice/clean"
+      outdir: "out/clean_csv"
 
   # ─────────────────────────────
   # 6. Download TIGER shapefile
