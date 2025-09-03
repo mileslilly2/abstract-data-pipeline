@@ -16,8 +16,9 @@ steps:
     uses: ep:ice.xlsx_to_csv
     needs: [ice_zip]
     params:
-      folder: "data/ice/raw/ice_release_jul2025"   # where ZIP extracted
-      outdir: "data/ice/csv"                       # where to write CSVs
+      folder: "${ice_zip.outdir}"   # pick up from previous step
+      outdir: "data/ice/csv"
+
 
   # ─────────────────────────────
   # 3. List CSV files (instead of Excel)
@@ -35,6 +36,16 @@ steps:
     uses: ep:ice.detect_headers
     needs: [csv_files]
 
+  #summarize the rows
+  - id: summarize
+    needs: [cleaned_rows]
+    uses: ep:ice.summary_json
+    params:
+      outfile: "data/ice/summary.json"
+      group_by: ["gender", "citizenship", "arresting_agency"]
+      numeric_fields: ["age"]
+      top_n: 30
+
   # ─────────────────────────────
   # 5. Write out both CSV + JSON per file
   # ─────────────────────────────
@@ -42,7 +53,7 @@ steps:
     uses: ep:ice.csv_sink
     needs: [cleaned_rows]
     params:
-      outdir: "data/ice/clean"
+      outdir: "out/clean_csv"
 
   # ─────────────────────────────
   # 6. Download TIGER shapefile
@@ -68,16 +79,11 @@ steps:
     needs: [cleaned_rows, states]
     params:
       shapefile: "data/shapes/tl_2024_us_state.shp"
+  
+
 
   # ─────────────────────────────
-  # 9. Feature importance (ML) → JSON
-  # ─────────────────────────────
-  - id: feat_imp
-    uses: ep:ice.feature_importance
-    needs: [cleaned_rows]
-
-  # ─────────────────────────────
-  # 10. Pipeline events sample → JSON
+  # 9. Pipeline events sample → JSON
   # ─────────────────────────────
   - id: events_merged
     uses: ep:ice.pipeline_events_merged
@@ -86,3 +92,13 @@ steps:
       cleaned_dir: "data/ice/clean"
       outfile: "out/pipeline_events_sample.json"
       sample_n: 100000
+
+
+  # ─────────────────────────────
+  # 10. Feature importance (ML) → JSON
+  # ─────────────────────────────
+  - id: feat_imp
+    uses: ep:ice.feature_importance
+    needs: [cleaned_rows]
+    params:
+      enable_ml: false   # toggle here
