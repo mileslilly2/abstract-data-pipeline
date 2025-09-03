@@ -13,16 +13,28 @@ out/
 # OS
 .DS_Store
 
-# Colab / data
-*.zip
-*.parquet
-*.geojson
+# Node
+node_modules/
+
+# Colab / notebooks
 /content/
 
-# virtualenv
-venv/
-ENV/
-.env/
+# Data (ignore everything by default)
+data/*
 
-# node
-node_modules/
+# Except pipeline outputs
+!data/output/
+!data/output/**/*.json
+!data/output/**/*.geojson
+
+# Ignore common raw data formats
+*.zip
+*.parquet
+*.csv
+*.xlsx
+*.dbf
+*.shp
+*.shx
+*.prj
+*.cpg
+*.xml

@@ -1,0 +1,12 @@
+version: 1
+steps:
+  - id: source_step
+    class: tests.test_needs:DummySource
+
+  - id: transform_step
+    class: tests.test_needs:DummyUppercase
+    needs: [source_step]
+
+  - id: sink_step
+    class: tests.test_needs:DummySink
+    needs: [transform_step]
