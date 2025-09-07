@@ -1,0 +1,32 @@
+# Minimal CJ Dropshipping client stub
+import requests
+from typing import Dict, Any, List
+
+class CJClient:
+    def __init__(self, app_key: str, app_secret: str, base_url: str = "https://developers.cjdropshipping.com"):
+        self.app_key = app_key
+        self.app_secret = app_secret
+        self.base_url = base_url
+        self.session = requests.Session()
+
+    def _auth_headers(self) -> Dict[str, str]:
+        return {"AppKey": self.app_key, "AppSecret": self.app_secret, "Accept": "application/json"}
+
+    def search_products(self, q: str, page: int = 1, size: int = 50) -> List[Dict[str, Any]]:
+        url = f"{self.base_url}/api/product/search"
+        resp = self.session.get(url, params={"keyword": q, "page": page, "size": size}, headers=self._auth_headers(), timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("data") or []
+
+    def get_product(self, product_id: str) -> Dict[str, Any]:
+        url = f"{self.base_url}/api/product/get"
+        resp = self.session.get(url, params={"productId": product_id}, headers=self._auth_headers(), timeout=30)
+        resp.raise_for_status()
+        return resp.json()
+
+    def create_order(self, order_payload: Dict[str, Any]) -> Dict[str, Any]:
+        url = f"{self.base_url}/api/order/create"
+        resp = self.session.post(url, json=order_payload, headers=self._auth_headers(), timeout=30)
+        resp.raise_for_status()
+        return resp.json()
