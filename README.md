@@ -38,8 +38,8 @@ cd abstract-data-pipeline
 pip install -e .
 
 # Install example plugins
-pip install -e plugins/adp_plugins.disaster
-pip install -e plugins/adp_plugins.ice
+pip install -e plugins/adp_plugins_disaster
+pip install -e plugins/adp_plugins_ice
 ```
 
 ---
