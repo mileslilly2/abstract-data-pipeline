@@ -16,9 +16,8 @@ steps:
     uses: ep:ice.xlsx_to_csv
     needs: [ice_zip]
     params:
-      folder: "${ice_zip.outdir}"   # pick up from previous step
+      folder: "data/ice/raw/ice_release_jul2025"   # actual folder with .xlsx files
       outdir: "data/ice/csv"
-
 
   # ─────────────────────────────
   # 3. List CSV files (instead of Excel)
@@ -36,7 +35,9 @@ steps:
     uses: ep:ice.detect_headers
     needs: [csv_files]
 
-  #summarize the rows
+  # ─────────────────────────────
+  # 5. Summarize the rows
+  # ─────────────────────────────
   - id: summarize
     needs: [cleaned_rows]
     uses: ep:ice.summary_json
@@ -47,16 +48,16 @@ steps:
       top_n: 30
 
   # ─────────────────────────────
-  # 5. Write out both CSV + JSON per file
+  # 6. Write out both CSV + JSON per file
   # ─────────────────────────────
   - id: cleaned_sink
     uses: ep:ice.csv_sink
     needs: [cleaned_rows]
     params:
-      outdir: "out/clean_csv"
+      outdir: "data/ice/clean"
 
   # ─────────────────────────────
-  # 6. Download TIGER shapefile
+  # 7. Download TIGER shapefile
   # ─────────────────────────────
   - id: states
     uses: ep:ice.states_shapefile
@@ -65,25 +66,23 @@ steps:
       outdir: "data/shapes"
 
   # ─────────────────────────────
-  # 7. Time-series arrests → JSON
+  # 8. Time-series arrests → JSON
   # ─────────────────────────────
   - id: ts_arrests
     uses: ep:ice.ts_arrests
     needs: [cleaned_rows]
 
   # ─────────────────────────────
-  # 8. Choropleth (detentions per state) → GeoJSON
+  # 9. Choropleth (detentions per state) → GeoJSON
   # ─────────────────────────────
   - id: choropleth
     uses: ep:ice.choropleth
     needs: [cleaned_rows, states]
     params:
       shapefile: "data/shapes/tl_2024_us_state.shp"
-  
-
 
   # ─────────────────────────────
-  # 9. Pipeline events sample → JSON
+  # 10. Pipeline events sample → JSON
   # ─────────────────────────────
   - id: events_merged
     uses: ep:ice.pipeline_events_merged
@@ -93,9 +92,8 @@ steps:
       outfile: "out/pipeline_events_sample.json"
       sample_n: 100000
 
-
   # ─────────────────────────────
-  # 10. Feature importance (ML) → JSON
+  # 11. Feature importance (ML) → JSON
   # ─────────────────────────────
   - id: feat_imp
     uses: ep:ice.feature_importance

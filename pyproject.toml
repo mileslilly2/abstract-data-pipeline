@@ -1,15 +1,35 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "adp-plugins-disaster"
-version = "0.0.1"
-description = "Example ADP plugin: weather.gov alerts"
+name = "abstract-data-pipeline"
+version = "0.1.0"
+description = "Abstract Data Pipeline core + plugins"
+readme = "README.md"
 requires-python = ">=3.9"
-dependencies = ["requests"]
+dependencies = [
+    "requests",
+    "pandas",
+    "geopandas",
+    "pyyaml",
+]
+
+[tool.setuptools]
+# Map logical package names to actual directories
+package-dir =
+    adp = "adp"
+    adp_plugins_disaster = "plugins/adp_plugins_disaster"
+    adp_plugins_ice = "plugins/adp_plugins_ice"
+packages = ["adp", "adp_plugins_disaster", "adp_plugins_ice"]
 
 [project.entry-points."adp.plugins"]
-weather_gov = "adp_plugins.disaster.weather_gov:WeatherGovAlertsSource"
-alerts_to_flat = "adp_plugins.disaster.weather_gov:AlertsToFlatRecords"
-geojson_alerts_sink = "adp_plugins.disaster.weather_gov:GeoJsonAlertsSink"
+# disaster plugin
+weather_gov = "adp_plugins_disaster.weather_gov:WeatherGovAlertsSource"
+alerts_to_flat = "adp_plugins_disaster.weather_gov:AlertsToFlatRecords"
+geojson_alerts_sink = "adp_plugins_disaster.weather_gov:GeoJsonAlertsSink"
+
+# ice plugin
+ice_excel = "adp_plugins_ice.ice_excel:LocalExcelFiles"
+detect_headers = "adp_plugins_ice.ice_excel:DetectHeaderAndRead"
+csv_sink = "adp_plugins_ice.ice_excel:CsvSink"
