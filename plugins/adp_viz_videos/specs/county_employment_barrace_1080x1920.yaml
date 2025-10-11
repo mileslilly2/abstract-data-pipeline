@@ -1,0 +1,16 @@
+chart_type: bar_race
+data: data/bls_county_employment_long.csv
+time: Year
+category: County
+value: Employed
+top_n: 10
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: "8M"
+out: videos/county_employment_barrace_1080x1920.mp4
+title: "Top Counties by Employment — {time:%Y}"
+x_label: "Employment"
+legend: false
+hold_frames: 1
