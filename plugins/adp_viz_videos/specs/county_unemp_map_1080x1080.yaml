@@ -1,0 +1,19 @@
+chart_type: choropleth
+data: data/county_unemp_income_2000_2023.csv
+time: Year
+value: Unemployment_rate
+geo: https://data.wvgis.wvu.edu/pub/Clearinghouse/Boundaries/County_Boundaries_24K_Topo/WV_county_boundaries_24k_topo_updated_2022_utm83.zip
+join_left_on: County_Nam
+join_right_on: County_Nam
+palette: Reds
+width: 1080
+height: 1080
+dpi: 150
+fps: 24
+bitrate: "8M"
+out: videos/county_unemp_map_1080x1080.mp4
+title: "County Unemployment — {time:%Y}"
+legend: true
+vmin: null
+vmax: null
+hold_frames: 1

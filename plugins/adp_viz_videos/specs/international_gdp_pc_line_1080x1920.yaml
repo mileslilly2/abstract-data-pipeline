@@ -1,0 +1,16 @@
+chart_type: line
+data: data/international_macro.csv
+time: Year
+value: GDP_per_capita
+group: Country
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: "8M"
+out: videos/international_gdp_pc_line_1080x1920.mp4
+title: "{time:%Y} GDP per Capita"
+x_label: "Year"
+y_label: "GDP per Capita"
+legend: true
+hold_frames: 1
