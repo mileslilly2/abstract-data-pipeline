@@ -1,0 +1,16 @@
+chart_type: bar_race
+data: data_clean/CA_county_metrics.csv
+time: Year
+category: CountyName
+value: MedianHouseholdIncome
+top_n: 12
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/CA_income_barrace_1080x1920.mp4
+title: Top 12 CA Counties by Median Income — {time:%Y}
+x_label: Median Household Income ($)
+legend: false
+hold_frames: 1

@@ -1,0 +1,19 @@
+chart_type: choropleth
+data: data_clean/CA_county_metrics.csv
+time: Year
+value: MedianHouseholdIncome
+geo: https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json
+join_left_on: CountyFIPS
+join_right_on: GEOID
+palette: Reds
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/CA_income_map_1080x1920.mp4
+title: CA Median Household Income — {time:%Y}
+legend: true
+vmin: null
+vmax: null
+hold_frames: 1
