@@ -17,24 +17,26 @@ RAW_DIR = Path("data_raw")
 CLEAN_DIR = Path("data_clean")
 CLEAN_DIR.mkdir(parents=True, exist_ok=True)
 
+
 def parse_state_from_filename(p: Path) -> str:
-    # Expect file like: WV_acs5_2023_county.csv
+    """Extract state abbreviation (e.g., WV) from filename."""
     m = re.match(r"([A-Z]{2})_acs5_(\d{4})_county\.csv$", p.name)
-    if not m:
-        return ""
-    return m.group(1)
+    return m.group(1) if m else ""
+
 
 def parse_year_from_filename(p: Path) -> int:
+    """Extract 4-digit year from filename."""
     m = re.match(r"[A-Z]{2}_acs5_(\d{4})_county\.csv$", p.name)
     return int(m.group(1)) if m else None
+
 
 def main():
     files = sorted(RAW_DIR.glob("*_acs5_*_county.csv"))
     if not files:
-        print("No raw files found in data_raw/. Run scripts/1_download_by_state.py first.")
+        print("⚠️ No raw files found. Run scripts/1_download_by_state.py first.")
         return
 
-    # group files by state
+    # Group files by state abbreviation
     by_state = {}
     for f in files:
         st = parse_state_from_filename(f)
@@ -45,42 +47,77 @@ def main():
 
     for st, paths in by_state.items():
         all_rows = []
-        for p in sorted(paths, key=parse_year_from_filename):
-            df = pd.read_csv(p, dtype={"county_fips": str})
-            # Clean NAME → "County, State" -> extract County name (first token before comma)
-            county_name = df["NAME"].astype(str).str.split(",").str[0].str.strip().str.upper()
-            df["CountyName"] = county_name
-            df["CountyFIPS"] = df["county_fips"].str.zfill(5)
-            df["Year"] = df["year"].astype(int)
-            # Numeric coercion
-            df["MedianHouseholdIncome"] = pd.to_numeric(df["MedianHouseholdIncome"], errors="coerce")
-            df["Population"] = pd.to_numeric(df["Population"], errors="coerce")
 
-            all_rows.append(df[[
-                "state_abbr","state_fips","CountyFIPS","CountyName","Year",
-                "MedianHouseholdIncome","Population"
-            ]])
+        for p in sorted(paths, key=parse_year_from_filename):
+            df = pd.read_csv(p, dtype={"county_fips": str}, low_memory=False)
+
+            # Normalize NAME → "COUNTY, STATE" → COUNTY (uppercase)
+            df["CountyName"] = (
+                df["NAME"]
+                .astype(str)
+                .str.split(",")
+                .str[0]
+                .str.replace(r"\s+COUNTY$", "", regex=True)
+                .str.strip()
+                .str.upper()
+            )
+
+            df["CountyFIPS"] = df["county_fips"].astype(str).str.zfill(5)
+
+            # Fix column capitalization and type
+            if "year" in df.columns and "Year" not in df.columns:
+                df.rename(columns={"year": "Year"}, inplace=True)
+            df["Year"] = pd.to_numeric(df["Year"], errors="coerce").astype("Int64")
+
+            # Coerce all numeric columns to numeric
+            exclude_cols = {
+                "state_abbr", "state_fips", "county_fips",
+                "NAME", "CountyName", "CountyFIPS", "state", "county", "Year"
+            }
+            numeric_cols = [c for c in df.columns if c not in exclude_cols]
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+
+            all_rows.append(
+                df[["state_abbr", "state_fips", "CountyFIPS", "CountyName", "Year"] + numeric_cols]
+            )
 
         if not all_rows:
-            print(f"⚠️  No rows for state {st}")
+            print(f"⚠️ No rows for {st}")
             continue
 
+        # Combine years and remove duplicate columns
         county_ts = pd.concat(all_rows, ignore_index=True)
-        county_ts = county_ts.sort_values(["CountyFIPS","Year"]).reset_index(drop=True)
+        county_ts = county_ts.loc[:, ~county_ts.columns.duplicated(keep="first")]
+
+        # Ensure consistent column types
+        county_ts["CountyFIPS"] = county_ts["CountyFIPS"].astype(str).str.zfill(5)
+        county_ts["Year"] = pd.to_numeric(county_ts["Year"], errors="coerce").astype("Int64")
+
+        county_ts = county_ts.sort_values(["CountyFIPS", "Year"]).reset_index(drop=True)
+
+        # Write cleaned per-county time series
         out_county = CLEAN_DIR / f"{st}_county_metrics.csv"
         county_ts.to_csv(out_county, index=False)
         print(f"✅ Wrote {out_county} ({len(county_ts)} rows)")
 
-        # Build state aggregate per year
-        agg = (county_ts
-               .groupby(["state_abbr","Year"], as_index=False)
-               .agg(PopulationSum=("Population","sum"),
-                    MedianIncomeAvg=("MedianHouseholdIncome","mean")))
+        # Compute state aggregates
+        numeric_cols = [c for c in county_ts.columns if c not in {"state_abbr", "state_fips", "CountyFIPS", "CountyName", "Year"}]
+        agg_dict = {col: "mean" for col in numeric_cols}
+        if "Population" in numeric_cols:
+            agg_dict["Population"] = "sum"
+
+        state_agg = (
+            county_ts.groupby(["state_abbr", "Year"], as_index=False)
+            .agg(agg_dict)
+        )
+
         out_state = CLEAN_DIR / f"{st}_state_aggregates.csv"
-        agg.to_csv(out_state, index=False)
-        print(f"✅ Wrote {out_state} ({len(agg)} rows)")
+        state_agg.to_csv(out_state, index=False)
+        print(f"✅ Wrote {out_state} ({len(state_agg)} rows)")
 
     print("🏁 Transform complete.")
+
 
 if __name__ == "__main__":
     main()

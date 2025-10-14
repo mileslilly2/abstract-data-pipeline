@@ -1,0 +1,17 @@
+chart_type: choropleth
+data: data_clean/VA_county_metrics.csv
+time: Year
+value: Unemployment_rate
+geo: https://opendata.arcgis.com/api/v3/datasets/6f5e05df4d2242f4a41c85722bca6f35_2/downloads/data
+join_left_on: CountyName
+join_right_on: County_Nam
+palette: Reds
+width: 1080
+height: 1080
+dpi: 150
+fps: 4
+bitrate: 6M
+out: videos/VA_unemployment_choropleth.mp4
+title: VA County Unemployment — {time:%Y}
+legend: true
+hold_frames: 10

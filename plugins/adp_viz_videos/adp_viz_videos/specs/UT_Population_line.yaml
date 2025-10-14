@@ -1,0 +1,15 @@
+chart_type: line
+data: data_clean/UT_state_aggregates.csv
+time: Year
+value: Population
+width: 1080
+height: 1080
+dpi: 150
+fps: 10
+bitrate: 6M
+out: videos/UT_Population_trend.mp4
+title: UT Population Trend (Statewide)
+x_label: Year
+y_label: Population
+legend: false
+hold_frames: 5
