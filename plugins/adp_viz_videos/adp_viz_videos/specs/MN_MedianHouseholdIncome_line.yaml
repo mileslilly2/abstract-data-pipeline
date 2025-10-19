@@ -1,0 +1,15 @@
+chart_type: line
+data: data_clean/MN_state_aggregates.csv
+time: Year
+value: MedianHouseholdIncome
+width: 1080
+height: 1080
+dpi: 150
+fps: 10
+bitrate: 6M
+out: videos/MN_MedianHouseholdIncome_trend.mp4
+title: MN MedianHouseholdIncome Trend (Statewide)
+x_label: Year
+y_label: MedianHouseholdIncome
+legend: false
+hold_frames: 5

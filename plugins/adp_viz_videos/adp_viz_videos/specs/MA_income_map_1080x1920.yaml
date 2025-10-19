@@ -1,0 +1,17 @@
+chart_type: choropleth
+data: data_clean/MA_county_metrics.csv
+time: Year
+value: Unemployment_rate
+geo: https://data.wvgis.wvu.edu/pub/Clearinghouse/Boundaries/County_Boundaries_24K_Topo/WV_county_boundaries_24k_topo_updated_2022_utm83.zip
+join_left_on: County_Nam
+join_right_on: County_Nam
+palette: Reds
+width: 1080
+height: 1080
+dpi: 150
+fps: 4
+bitrate: 6M
+out: videos/MA_unemployment_choropleth.mp4
+title: MA County Unemployment — {time:%Y}
+legend: true
+hold_frames: 10

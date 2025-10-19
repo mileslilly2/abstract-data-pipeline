@@ -1,0 +1,17 @@
+chart_type: choropleth
+data: data_clean/TX_county_metrics.csv
+time: Year
+value: MedianHouseholdIncome
+geo: https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json
+join_left_on: CountyFIPS
+join_right_on: id
+palette: Reds
+width: 1080
+height: 1080
+dpi: 150
+fps: 4
+bitrate: 6M
+out: videos/TX_MedianHouseholdIncome_map.mp4
+title: TX County MedianHouseholdIncome — {time:%Y}
+legend: true
+hold_frames: 10

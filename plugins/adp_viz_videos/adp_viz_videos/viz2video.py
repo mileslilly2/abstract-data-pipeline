@@ -2,6 +2,7 @@
 # viz2video.py
 # Generalized "time-series → video" engine for IG/TikTok
 # Supports: choropleth | line | bar_race
+
 from __future__ import annotations
 import sys, math, warnings
 from dataclasses import dataclass
@@ -21,12 +22,25 @@ except Exception:
 
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
 
+# ---------- FIGURE CONVERSION ----------
 def fig_to_ndarray(fig: plt.Figure) -> np.ndarray:
+    """Convert a Matplotlib figure to an RGB numpy array safely across backends."""
     fig.canvas.draw()
     w, h = fig.canvas.get_width_height()
-    buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    return buf.reshape((h, w, 3))
+    try:
+        buf = np.asarray(fig.canvas.renderer.buffer_rgba())
+        if buf.shape[2] == 4:
+            buf = buf[..., :3]
+    except Exception:
+        try:
+            buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+            buf = buf.reshape((h, w, 3))
+        except Exception:
+            buf = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
+            buf = buf.reshape((h, w, 4))[..., 1:4]
+    return np.asarray(buf, dtype=np.uint8)
 
+# ---------- DATA HELPERS ----------
 def read_table(path: str) -> pd.DataFrame:
     p = path.lower()
     if p.endswith(".parquet"):
@@ -35,7 +49,6 @@ def read_table(path: str) -> pd.DataFrame:
         return pd.read_csv(path)
     if p.endswith(".tsv"):
         return pd.read_csv(path, sep="\t")
-    # Fallback
     return pd.read_csv(path)
 
 def ensure_datetime(df: pd.DataFrame, col: str) -> pd.Series:
@@ -62,9 +75,9 @@ def fixed_axes_limits(series: pd.Series, pad: float = 0.05):
     return (lo - pad*span, hi + pad*span)
 
 def make_figure(width_px: int, height_px: int, dpi: int) -> plt.Figure:
-    fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi)
-    return fig
+    return plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi)
 
+# ---------- SPEC CONFIG ----------
 @dataclass
 class Spec:
     chart_type: str
@@ -98,6 +111,7 @@ class Spec:
     def from_dict(d: Dict[str, Any]) -> "Spec":
         return Spec(**d)
 
+# ---------- BASE RENDERER ----------
 class BaseRenderer:
     def __init__(self, spec: Spec, df: pd.DataFrame):
         self.spec = spec
@@ -110,11 +124,20 @@ class BaseRenderer:
                 self.df["_time"] = t
         except Exception:
             self.df["_time"] = pd.to_datetime(self.df[spec.time].astype(int), format="%Y", errors="coerce")
+
         self.df = self.df.sort_values("_time")
         self.times: List[pd.Timestamp] = [t for t in self.df["_time"].unique() if pd.notna(t)]
 
+        # Auto-scale duration to ~10 seconds
+        if len(self.times) > 0 and self.spec.fps > 0:
+            target_seconds = 10
+            total_frames = len(self.times)
+            frames_per_time = max(1, int(target_seconds * self.spec.fps / total_frames))
+            self.spec.hold_frames = frames_per_time
+            print(f"[INFO] Auto duration: {len(self.times)} time steps × "
+                  f"{frames_per_time} holds @ {self.spec.fps} fps ≈ {target_seconds:.1f}s")
+
     def writer(self):
-        # Ensure yuv420p for IG/TikTok compatibility
         return imageio.get_writer(
             self.spec.out,
             fps=self.spec.fps,
@@ -127,12 +150,14 @@ class BaseRenderer:
     def render(self):
         raise NotImplementedError
 
+# ---------- LINE RENDERER ----------
 class LineRenderer(BaseRenderer):
     def render(self):
         sp = self.spec
         y = sp.value
         g = sp.group
         assert y, "Spec.value required for line chart"
+
         if sp.y_min is not None and sp.y_max is not None:
             y_min, y_max = sp.y_min, sp.y_max
         else:
@@ -143,8 +168,8 @@ class LineRenderer(BaseRenderer):
             for t in self.times:
                 fig = make_figure(sp.width, sp.height, sp.dpi)
                 ax = fig.add_subplot(111)
-
                 cur = self.df[self.df["_time"] <= t]
+
                 if g and g in cur.columns:
                     for name, sub in cur.groupby(g):
                         ax.plot(sub["_time"], pd.to_numeric(sub[y], errors="coerce"), label=str(name))
@@ -157,7 +182,14 @@ class LineRenderer(BaseRenderer):
                 if sp.x_label: ax.set_xlabel(sp.x_label)
                 if sp.y_label: ax.set_ylabel(sp.y_label)
                 ax.grid(alpha=0.2, linewidth=0.6)
-                ax.set_title(safe_title(sp.title, time=t))
+
+                # Dynamic year label
+                if sp.time in cur.columns and not cur[sp.time].dropna().empty:
+                    year_label = str(int(cur[sp.time].max()))
+                else:
+                    year_label = str(pd.to_datetime(t, errors="coerce").year)
+                title_text = safe_title(sp.title, time=year_label)
+                ax.set_title(title_text, fontsize=18, weight="bold")
 
                 frame = fig_to_ndarray(fig)
                 plt.close(fig)
@@ -166,6 +198,7 @@ class LineRenderer(BaseRenderer):
         finally:
             writer.close()
 
+# ---------- BAR RACE RENDERER ----------
 class BarRaceRenderer(BaseRenderer):
     def render(self):
         sp = self.spec
@@ -187,7 +220,15 @@ class BarRaceRenderer(BaseRenderer):
                 ax = fig.add_subplot(111)
                 ax.barh(labels, vals)
                 ax.set_xlim(y_min, y_max)
-                ax.set_title(safe_title(sp.title, time=t))
+
+                # Dynamic year label
+                if sp.time in cur.columns and not cur[sp.time].dropna().empty:
+                    year_label = str(int(cur[sp.time].iloc[0]))
+                else:
+                    year_label = str(pd.to_datetime(t, errors="coerce").year)
+                title_text = safe_title(sp.title, time=year_label)
+                ax.set_title(title_text, fontsize=18, weight="bold")
+
                 if sp.x_label: ax.set_xlabel(sp.x_label)
                 for i, v in enumerate(vals):
                     ax.text(v, i, f" {v:,.0f}", va="center", ha="left")
@@ -200,6 +241,7 @@ class BarRaceRenderer(BaseRenderer):
         finally:
             writer.close()
 
+# ---------- CHOROPLETH RENDERER ----------
 class ChoroplethRenderer(BaseRenderer):
     def render(self):
         if not _HAS_GEO:
@@ -219,19 +261,37 @@ class ChoroplethRenderer(BaseRenderer):
         try:
             for t in self.times:
                 cur = self.df[self.df["_time"] == t]
+                if sp.join_right_on in gdf.columns:
+                    gdf[sp.join_right_on] = gdf[sp.join_right_on].astype(str).str.zfill(5)
+                if sp.join_left_on in cur.columns:
+                    cur[sp.join_left_on] = cur[sp.join_left_on].astype(str).str.zfill(5)
+
                 frame_gdf = gdf.merge(cur, left_on=sp.join_right_on, right_on=sp.join_left_on, how="left")
 
                 fig = make_figure(sp.width, sp.height, sp.dpi)
                 ax = fig.add_subplot(111)
                 frame_gdf.plot(
-                    column=sp.value, ax=ax, cmap=cmap, edgecolor="0.3", linewidth=0.2,
-                    norm=norm, legend=sp.legend,
+                    column=sp.value,
+                    ax=ax,
+                    cmap=cmap,
+                    edgecolor="0.3",
+                    linewidth=0.2,
+                    norm=norm,
+                    legend=sp.legend,
                     legend_kwds={"label": sp.value.replace("_", " "), "shrink": 0.6, "orientation": "vertical"}
                 )
                 ax.set_axis_off()
-                ax.set_title(safe_title(sp.title, time=t))
-                fig.tight_layout()
 
+                # Dynamic year label
+                if sp.time in cur.columns and not cur[sp.time].dropna().empty:
+                    year_label = str(int(cur[sp.time].iloc[0]))
+                else:
+                    year_label = str(pd.to_datetime(t, errors="coerce").year)
+                title_text = safe_title(sp.title, time=year_label)
+                fig.suptitle(title_text, fontsize=22, fontweight="bold", ha="center", y=0.97)
+                ax.set_title(year_label, fontsize=18, fontweight="bold", y=-0.08)
+
+                fig.tight_layout()
                 nd = fig_to_ndarray(fig)
                 plt.close(fig)
                 for _ in range(max(1, sp.hold_frames)):
@@ -239,6 +299,7 @@ class ChoroplethRenderer(BaseRenderer):
         finally:
             writer.close()
 
+# ---------- FACTORY ----------
 def build_renderer(spec: Spec, df: pd.DataFrame):
     ct = spec.chart_type.lower()
     if ct == "line":
@@ -249,6 +310,7 @@ def build_renderer(spec: Spec, df: pd.DataFrame):
         return ChoroplethRenderer(spec, df)
     raise ValueError(f"Unknown chart_type: {spec.chart_type}")
 
+# ---------- CLI ----------
 def run(spec_path: str) -> str:
     with open(spec_path, "r", encoding="utf-8") as f:
         d = yaml.safe_load(f)
