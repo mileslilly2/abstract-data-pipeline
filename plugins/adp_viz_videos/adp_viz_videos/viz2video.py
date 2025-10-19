@@ -58,7 +58,8 @@ def ensure_datetime(df: pd.DataFrame, col: str) -> pd.Series:
     return s
 
 def safe_title(fmt: Optional[str], **kw) -> str:
-    if not fmt: return ""
+    if not fmt:
+        return ""
     try:
         return fmt.format(**kw)
     except Exception:
@@ -72,10 +73,14 @@ def fixed_axes_limits(series: pd.Series, pad: float = 0.05):
     if math.isclose(lo, hi):
         return (lo - 0.5, hi + 0.5)
     span = hi - lo
-    return (lo - pad*span, hi + pad*span)
+    return (lo - pad * span, hi + pad * span)
 
+# ---------- FIXED: make_figure ----------
 def make_figure(width_px: int, height_px: int, dpi: int) -> plt.Figure:
-    return plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi)
+    """Create a Matplotlib figure that truly fills a 1080x1920 9:16 frame."""
+    fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi)
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)  # fill entire canvas
+    return fig
 
 # ---------- SPEC CONFIG ----------
 @dataclass
@@ -91,8 +96,8 @@ class Spec:
     join_left_on: Optional[str] = None
     join_right_on: Optional[str] = None
     palette: str = "Reds"
-    width: int = 1080
-    height: int = 1920
+    width: int = 1080      # 1080 pixels wide
+    height: int = 1920     # 1920 pixels tall (vertical 9:16)
     dpi: int = 150
     fps: int = 24
     bitrate: str = "8M"
@@ -119,14 +124,20 @@ class BaseRenderer:
         try:
             t = ensure_datetime(self.df, spec.time)
             if t.isna().all():
-                self.df["_time"] = pd.to_datetime(self.df[spec.time].astype(int), format="%Y", errors="coerce")
+                self.df["_time"] = pd.to_datetime(
+                    self.df[spec.time].astype(int), format="%Y", errors="coerce"
+                )
             else:
                 self.df["_time"] = t
         except Exception:
-            self.df["_time"] = pd.to_datetime(self.df[spec.time].astype(int), format="%Y", errors="coerce")
+            self.df["_time"] = pd.to_datetime(
+                self.df[spec.time].astype(int), format="%Y", errors="coerce"
+            )
 
         self.df = self.df.sort_values("_time")
-        self.times: List[pd.Timestamp] = [t for t in self.df["_time"].unique() if pd.notna(t)]
+        self.times: List[pd.Timestamp] = [
+            t for t in self.df["_time"].unique() if pd.notna(t)
+        ]
 
         # Auto-scale duration to ~10 seconds
         if len(self.times) > 0 and self.spec.fps > 0:
@@ -134,8 +145,10 @@ class BaseRenderer:
             total_frames = len(self.times)
             frames_per_time = max(1, int(target_seconds * self.spec.fps / total_frames))
             self.spec.hold_frames = frames_per_time
-            print(f"[INFO] Auto duration: {len(self.times)} time steps × "
-                  f"{frames_per_time} holds @ {self.spec.fps} fps ≈ {target_seconds:.1f}s")
+            print(
+                f"[INFO] Auto duration: {len(self.times)} time steps × "
+                f"{frames_per_time} holds @ {self.spec.fps} fps ≈ {target_seconds:.1f}s"
+            )
 
     def writer(self):
         return imageio.get_writer(
@@ -144,7 +157,7 @@ class BaseRenderer:
             codec="libx264",
             bitrate=self.spec.bitrate,
             ffmpeg_log_level="error",
-            output_params=["-pix_fmt", "yuv420p"]
+            output_params=["-pix_fmt", "yuv420p", "-vf", "scale=1080:1920,setsar=1:1"],
         )
 
     def render(self):
@@ -172,15 +185,26 @@ class LineRenderer(BaseRenderer):
 
                 if g and g in cur.columns:
                     for name, sub in cur.groupby(g):
-                        ax.plot(sub["_time"], pd.to_numeric(sub[y], errors="coerce"), label=str(name))
+                        ax.plot(
+                            sub["_time"],
+                            pd.to_numeric(sub[y], errors="coerce"),
+                            label=str(name),
+                        )
                 else:
-                    ax.plot(cur["_time"], pd.to_numeric(cur[y], errors="coerce"), label=y)
+                    ax.plot(
+                        cur["_time"],
+                        pd.to_numeric(cur[y], errors="coerce"),
+                        label=y,
+                    )
 
                 ax.set_xlim(self.times[0], self.times[-1])
                 ax.set_ylim(y_min, y_max)
-                if sp.legend: ax.legend(loc="upper left", frameon=False)
-                if sp.x_label: ax.set_xlabel(sp.x_label)
-                if sp.y_label: ax.set_ylabel(sp.y_label)
+                if sp.legend:
+                    ax.legend(loc="upper left", frameon=False)
+                if sp.x_label:
+                    ax.set_xlabel(sp.x_label)
+                if sp.y_label:
+                    ax.set_ylabel(sp.y_label)
                 ax.grid(alpha=0.2, linewidth=0.6)
 
                 # Dynamic year label
@@ -192,6 +216,10 @@ class LineRenderer(BaseRenderer):
                 ax.set_title(title_text, fontsize=18, weight="bold")
 
                 frame = fig_to_ndarray(fig)
+                # --- Force vertical orientation ---
+                if frame.shape[1] > frame.shape[0]:
+                    frame = np.rot90(frame, 3)
+                # ---------------------------------
                 plt.close(fig)
                 for _ in range(max(1, sp.hold_frames)):
                     writer.append_data(frame)
@@ -212,7 +240,11 @@ class BarRaceRenderer(BaseRenderer):
             for t in self.times:
                 cur = self.df[self.df["_time"] == t].copy()
                 cur[val] = pd.to_numeric(cur[val], errors="coerce")
-                cur = cur.dropna(subset=[val]).sort_values(val, ascending=False).head(sp.top_n)[::-1]
+                cur = (
+                    cur.dropna(subset=[val])
+                    .sort_values(val, ascending=False)
+                    .head(sp.top_n)[::-1]
+                )
                 labels = cur[cat].astype(str).values
                 vals = cur[val].values
 
@@ -221,7 +253,6 @@ class BarRaceRenderer(BaseRenderer):
                 ax.barh(labels, vals)
                 ax.set_xlim(y_min, y_max)
 
-                # Dynamic year label
                 if sp.time in cur.columns and not cur[sp.time].dropna().empty:
                     year_label = str(int(cur[sp.time].iloc[0]))
                 else:
@@ -229,12 +260,17 @@ class BarRaceRenderer(BaseRenderer):
                 title_text = safe_title(sp.title, time=year_label)
                 ax.set_title(title_text, fontsize=18, weight="bold")
 
-                if sp.x_label: ax.set_xlabel(sp.x_label)
+                if sp.x_label:
+                    ax.set_xlabel(sp.x_label)
                 for i, v in enumerate(vals):
                     ax.text(v, i, f" {v:,.0f}", va="center", ha="left")
                 ax.grid(axis="x", alpha=0.2, linewidth=0.6)
 
                 frame = fig_to_ndarray(fig)
+                # --- Force vertical orientation ---
+                if frame.shape[1] > frame.shape[0]:
+                    frame = np.rot90(frame, 3)
+                # ---------------------------------
                 plt.close(fig)
                 for _ in range(max(1, sp.hold_frames)):
                     writer.append_data(frame)
@@ -245,15 +281,26 @@ class BarRaceRenderer(BaseRenderer):
 class ChoroplethRenderer(BaseRenderer):
     def render(self):
         if not _HAS_GEO:
-            raise RuntimeError("geopandas is required for choropleth charts. pip install geopandas shapely")
+            raise RuntimeError(
+                "geopandas is required for choropleth charts. pip install geopandas shapely"
+            )
         sp = self.spec
-        assert sp.geo and sp.value and sp.join_left_on and sp.join_right_on, \
-            "Spec.geo, Spec.value, Spec.join_left_on, Spec.join_right_on are required for choropleth"
+        assert (
+            sp.geo and sp.value and sp.join_left_on and sp.join_right_on
+        ), "Spec.geo, Spec.value, Spec.join_left_on, Spec.join_right_on are required for choropleth"
 
         gdf = gpd.read_file(sp.geo)
         all_vals = pd.to_numeric(self.df[sp.value], errors="coerce").dropna()
-        vmin = sp.vmin if sp.vmin is not None else (float(all_vals.min()) if not all_vals.empty else 0.0)
-        vmax = sp.vmax if sp.vmax is not None else (float(all_vals.max()) if not all_vals.empty else 1.0)
+        vmin = (
+            sp.vmin
+            if sp.vmin is not None
+            else (float(all_vals.min()) if not all_vals.empty else 0.0)
+        )
+        vmax = (
+            sp.vmax
+            if sp.vmax is not None
+            else (float(all_vals.max()) if not all_vals.empty else 1.0)
+        )
         norm = plt.Normalize(vmin=vmin, vmax=vmax)
         cmap = plt.colormaps.get(sp.palette, plt.colormaps["Reds"])
 
@@ -266,7 +313,9 @@ class ChoroplethRenderer(BaseRenderer):
                 if sp.join_left_on in cur.columns:
                     cur[sp.join_left_on] = cur[sp.join_left_on].astype(str).str.zfill(5)
 
-                frame_gdf = gdf.merge(cur, left_on=sp.join_right_on, right_on=sp.join_left_on, how="left")
+                frame_gdf = gdf.merge(
+                    cur, left_on=sp.join_right_on, right_on=sp.join_left_on, how="left"
+                )
 
                 fig = make_figure(sp.width, sp.height, sp.dpi)
                 ax = fig.add_subplot(111)
@@ -278,21 +327,30 @@ class ChoroplethRenderer(BaseRenderer):
                     linewidth=0.2,
                     norm=norm,
                     legend=sp.legend,
-                    legend_kwds={"label": sp.value.replace("_", " "), "shrink": 0.6, "orientation": "vertical"}
+                    legend_kwds={
+                        "label": sp.value.replace("_", " "),
+                        "shrink": 0.6,
+                        "orientation": "vertical",
+                    },
                 )
                 ax.set_axis_off()
 
-                # Dynamic year label
                 if sp.time in cur.columns and not cur[sp.time].dropna().empty:
                     year_label = str(int(cur[sp.time].iloc[0]))
                 else:
                     year_label = str(pd.to_datetime(t, errors="coerce").year)
                 title_text = safe_title(sp.title, time=year_label)
-                fig.suptitle(title_text, fontsize=22, fontweight="bold", ha="center", y=0.97)
+                fig.suptitle(
+                    title_text, fontsize=22, fontweight="bold", ha="center", y=0.97
+                )
                 ax.set_title(year_label, fontsize=18, fontweight="bold", y=-0.08)
 
                 fig.tight_layout()
                 nd = fig_to_ndarray(fig)
+                # --- Force vertical orientation ---
+                if nd.shape[1] > nd.shape[0]:
+                    nd = np.rot90(nd, 3)
+                # ---------------------------------
                 plt.close(fig)
                 for _ in range(max(1, sp.hold_frames)):
                     writer.append_data(nd)
@@ -322,6 +380,7 @@ def run(spec_path: str) -> str:
 
 def main(argv=None):
     import argparse
+
     ap = argparse.ArgumentParser(description="Time-series → video")
     ap.add_argument("--spec", required=True, help="YAML spec file")
     args = ap.parse_args(argv)
