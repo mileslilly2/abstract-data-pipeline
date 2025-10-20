@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/AR_MedianHouseholdIncome_map.mp4
-title: AR County MedianHouseholdIncome — {time:%Y}
+title: AR County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10

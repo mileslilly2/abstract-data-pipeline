@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/NE_Population_map.mp4
-title: NE County Population — {time:%Y}
+title: NE County Population — Over Time
 legend: true
 hold_frames: 10

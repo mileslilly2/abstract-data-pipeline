@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/TX_MedianHouseholdIncome_map.mp4
-title: TX County MedianHouseholdIncome — {time:%Y}
+title: TX County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10

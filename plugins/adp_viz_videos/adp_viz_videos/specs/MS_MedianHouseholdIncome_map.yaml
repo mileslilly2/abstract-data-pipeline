@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/MS_MedianHouseholdIncome_map.mp4
-title: MS County MedianHouseholdIncome — {time:%Y}
+title: MS County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10
