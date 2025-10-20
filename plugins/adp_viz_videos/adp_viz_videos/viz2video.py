@@ -228,15 +228,16 @@ def run(spec_path: str) -> str:
     # ✅ Simplified, safe scaling: always enforce 1080x1920
     # ✅ Preserve aspect ratio: pad to 1080x1920 (no squish)
     cmd = [
-        "ffmpeg", "-y", "-i", str(src),
-        "-vf", (
-            "scale=1080:-2:force_original_aspect_ratio=decrease,"
-            "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,setsar=1:1"
-        ),
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-r", str(spec.fps),
-        str(out_path)
-    ]
+    "ffmpeg", "-y", "-i", str(src),
+    "-vf", (
+        "scale=1080:-2:force_original_aspect_ratio=decrease,"
+        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:white,setsar=1:1"
+    ),
+    "-c:v", "libx264", "-pix_fmt", "yuv420p",
+    "-r", str(spec.fps),
+    str(out_path)
+]
+
 
 
     print("[INFO] Running:", " ".join(shlex.quote(c) for c in cmd))
