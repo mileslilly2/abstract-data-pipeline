@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/NC_Population_map.mp4
-title: NC County Population — {time:%Y}
+title: NC County Population — Over Time
 legend: true
 hold_frames: 10

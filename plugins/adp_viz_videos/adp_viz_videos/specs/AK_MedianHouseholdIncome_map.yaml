@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/AK_MedianHouseholdIncome_map.mp4
-title: AK County MedianHouseholdIncome — {time:%Y}
+title: AK County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10

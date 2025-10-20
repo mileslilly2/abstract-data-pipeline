@@ -39,7 +39,7 @@ def make_choropleth_spec(state_abbr: str, data_path: str, metric: str) -> dict:
         "fps": 4,
         "bitrate": "6M",
         "out": f"videos/{state_abbr}_{metric}_map.mp4",
-        "title": f"{state_abbr} County {metric.replace('_',' ')} — "+"{time:%Y}",
+        "title": f"{state_abbr} County {metric.replace('_',' ')} — "+"Over Time",
         "legend": True,
         "hold_frames": 10
     }

@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/CA_Population_map.mp4
-title: CA County Population — {time:%Y}
+title: CA County Population — Over Time
 legend: true
 hold_frames: 10

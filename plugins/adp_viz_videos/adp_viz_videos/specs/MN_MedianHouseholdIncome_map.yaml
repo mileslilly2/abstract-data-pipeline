@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/MN_MedianHouseholdIncome_map.mp4
-title: MN County MedianHouseholdIncome — {time:%Y}
+title: MN County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10

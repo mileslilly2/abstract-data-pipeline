@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/DE_Population_map.mp4
-title: DE County Population — {time:%Y}
+title: DE County Population — Over Time
 legend: true
 hold_frames: 10

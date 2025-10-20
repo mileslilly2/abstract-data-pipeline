@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/NE_MedianHouseholdIncome_map.mp4
-title: NE County MedianHouseholdIncome — {time:%Y}
+title: NE County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10

@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/GA_Population_map.mp4
-title: GA County Population — {time:%Y}
+title: GA County Population — Over Time
 legend: true
 hold_frames: 10

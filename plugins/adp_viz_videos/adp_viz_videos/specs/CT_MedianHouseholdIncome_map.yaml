@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/CT_MedianHouseholdIncome_map.mp4
-title: CT County MedianHouseholdIncome — {time:%Y}
+title: CT County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10

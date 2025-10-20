@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/SD_MedianHouseholdIncome_map.mp4
-title: SD County MedianHouseholdIncome — {time:%Y}
+title: SD County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10

@@ -12,6 +12,6 @@ dpi: 150
 fps: 4
 bitrate: 6M
 out: videos/IL_MedianHouseholdIncome_map.mp4
-title: IL County MedianHouseholdIncome — {time:%Y}
+title: IL County MedianHouseholdIncome — Over Time
 legend: true
 hold_frames: 10
