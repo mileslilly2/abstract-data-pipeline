@@ -21,6 +21,8 @@ node_modules/
 
 # Data (ignore everything by default)
 data/*
+soundfonts/
+data_midi/
 
 # Except pipeline outputs
 !out/
