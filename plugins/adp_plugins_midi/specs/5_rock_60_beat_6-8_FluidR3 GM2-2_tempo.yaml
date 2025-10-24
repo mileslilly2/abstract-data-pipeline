@@ -1,0 +1,8 @@
+chart_type: line
+data: audio_data/5_rock_60_beat_6-8_FluidR3 GM2-2_tempo.csv
+time: time
+value: frequency
+title: 5 Rock 60 Beat 6-8 Fluidr3 Gm2-2 (Tempo)
+palette: Reds
+fps: 24
+out: out/5_rock_60_beat_6-8_FluidR3 GM2-2_tempo.mp4

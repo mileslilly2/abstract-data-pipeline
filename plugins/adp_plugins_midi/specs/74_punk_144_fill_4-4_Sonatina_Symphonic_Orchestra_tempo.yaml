@@ -1,0 +1,8 @@
+chart_type: line
+data: audio_data/74_punk_144_fill_4-4_Sonatina_Symphonic_Orchestra_tempo.csv
+time: time
+value: frequency
+title: 74 Punk 144 Fill 4-4 Sonatina Symphonic Orchestra (Tempo)
+palette: Reds
+fps: 24
+out: out/74_punk_144_fill_4-4_Sonatina_Symphonic_Orchestra_tempo.mp4

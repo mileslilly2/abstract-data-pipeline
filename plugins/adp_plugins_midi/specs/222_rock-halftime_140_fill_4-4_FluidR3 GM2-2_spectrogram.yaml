@@ -1,0 +1,8 @@
+chart_type: choropleth
+data: audio_data/222_rock-halftime_140_fill_4-4_FluidR3 GM2-2_spectrogram.csv
+time: time
+value: intensity
+title: 222 Rock-Halftime 140 Fill 4-4 Fluidr3 Gm2-2 (Spectrogram)
+palette: Reds
+fps: 24
+out: out/222_rock-halftime_140_fill_4-4_FluidR3 GM2-2_spectrogram.mp4
