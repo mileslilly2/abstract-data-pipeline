@@ -1,81 +1,63 @@
 #!/usr/bin/env python3
 """
 push_soundfonts_to_hf.py
-----------------------------------------
-Uploads all .sf2/.sf3 files from the local `soundfonts/` directory
-to a Hugging Face Datasets repository, and auto-generates an
-index.json manifest for easy querying.
+───────────────────────────────────────────────
+Uploads all .sf2/.sf3 files from local `soundfonts/`
+to a Hugging Face Datasets repo.
 
-Requires:
-    pip install huggingface_hub
-
-Usage:
-    python push_soundfonts_to_hf.py
+It does NOT generate manifests — expects:
+  • soundfonts_manifest.parquet
+  • soundfonts_manifest.jsonl
+already created by the fetcher.
 """
 
-from huggingface_hub import HfApi, upload_folder
+from huggingface_hub import upload_folder
 from pathlib import Path
-import json, os, time
+import sys, time
 
 # ──────────────────────────────────────────────
 # CONFIGURATION
 # ──────────────────────────────────────────────
-REPO_ID = "mileslilly/soundfonts"  # ← replace with your HF username/repo
-LOCAL_DIR = Path("soundfonts")    # folder containing .sf2/.sf3 files
-LICENSE = "CC-BY-4.0 or compatible"  # default license note
-DESCRIPTION = (
-    "A collection of free & open General-MIDI and orchestral SoundFonts "
-    "mirrored for educational & generative-music research."
-)
+REPO_ID = "mileslilly/soundfonts"
+LOCAL_DIR = Path("soundfonts")
+REQUIRED_FILES = [
+    "soundfonts_manifest.parquet",
+    "soundfonts_manifest.jsonl"
+]
 
 # ──────────────────────────────────────────────
-# BUILD INDEX
-# ──────────────────────────────────────────────
-def build_index(folder: Path):
-    print(f"[{time.strftime('%H:%M:%S')}] Building index for {folder}")
-    entries = []
-    for f in sorted(folder.glob("*.sf[23]")):
-        size_mb = f.stat().st_size / (1024 * 1024)
-        entries.append({
-            "name": f.name,
-            "size_mb": round(size_mb, 2),
-            "license": LICENSE,
-            "local_path": str(f),
-            "updated": time.strftime("%Y-%m-%d"),
-        })
-    index = {
-        "dataset": REPO_ID,
-        "description": DESCRIPTION,
-        "count": len(entries),
-        "soundfonts": entries,
-    }
-    out = folder / "index.json"
-    with open(out, "w", encoding="utf-8") as fp:
-        json.dump(index, fp, indent=2)
-    print(f"[{time.strftime('%H:%M:%S')}] ✓ Wrote index.json with {len(entries)} entries")
-    return out
+def verify_manifests(folder: Path):
+    missing = [f for f in REQUIRED_FILES if not (folder / f).exists()]
+    if missing:
+        print(f"❌ Missing required manifest(s): {', '.join(missing)}")
+        print("Please run your fetcher first to generate them.")
+        sys.exit(2)
+    else:
+        print(f"✅ Found required manifests in {folder}")
 
-# ──────────────────────────────────────────────
-# UPLOAD TO HUGGING FACE
 # ──────────────────────────────────────────────
 def upload_to_hf(repo_id: str, folder: Path):
     print(f"[{time.strftime('%H:%M:%S')}] Uploading {folder} → {repo_id}")
-    api = HfApi()
     upload_folder(
         repo_id=repo_id,
         repo_type="dataset",
         folder_path=str(folder),
-        path_in_repo="",  # upload to root
+        path_in_repo="",
         commit_message=f"update soundfont dataset ({time.strftime('%Y-%m-%d')})",
-        ignore_patterns=["*.tmp", "*.part", "__pycache__"],
+        ignore_patterns=[
+            "*.tmp", "*.part", "__pycache__",
+            "index.json",  # avoid nested JSON confusion
+            ".DS_Store",
+        ],
     )
     print(f"[{time.strftime('%H:%M:%S')}] ✅ Upload complete.")
-    print(f"Browse → https://huggingface.co/datasets/{repo_id}")
+    print(f"🔗 https://huggingface.co/datasets/{repo_id}")
 
 # ──────────────────────────────────────────────
-# MAIN
-# ──────────────────────────────────────────────
 if __name__ == "__main__":
-    LOCAL_DIR.mkdir(exist_ok=True)
-    index_path = build_index(LOCAL_DIR)
+    if not LOCAL_DIR.exists():
+        print(f"❌ Missing folder: {LOCAL_DIR.resolve()}")
+        sys.exit(2)
+
+    verify_manifests(LOCAL_DIR)
     upload_to_hf(REPO_ID, LOCAL_DIR)
