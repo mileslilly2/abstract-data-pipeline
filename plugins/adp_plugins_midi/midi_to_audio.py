@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
-# midi_to_audio_hf2hf.py
-# Render MIDI → Audio using MIDIs + SoundFonts streamed directly from two HF datasets
+# midi_to_audio.py
+# Render MIDI → Audio using MIDIs + SoundFonts stored as raw files on Hugging Face
+
 import argparse, subprocess, tempfile, os
 from pathlib import Path
-from datasets import load_dataset
-
-def save_temp_file(data_field, filename_hint, suffix):
-    """Save streamed binary data to a temporary file and return its Path."""
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp.write(data_field.read())
-        tmp_path = Path(tmp.name)
-    print(f"🗂️  Cached {filename_hint} at {tmp_path}")
-    return tmp_path
+from huggingface_hub import list_repo_files, hf_hub_download
 
 def midi_to_audio(midi_path: Path, soundfont: Path, out_path: Path, rate: int = 44100):
     """Render one MIDI file with one SoundFont via FluidSynth CLI."""
@@ -26,10 +19,8 @@ def midi_to_audio(midi_path: Path, soundfont: Path, out_path: Path, rate: int = 
 
 def main():
     ap = argparse.ArgumentParser(description="Render Hugging Face MIDI + SoundFont datasets via FluidSynth.")
-    ap.add_argument("--midi-dataset", required=True, help="HF dataset containing .mid files")
+    ap.add_argument("--midi-dataset", required=True, help="HF dataset containing raw .mid files")
     ap.add_argument("--soundfont-dataset", required=True, help="HF dataset containing .sf2/.sf3 files")
-    ap.add_argument("--midi-split", default="train")
-    ap.add_argument("--sf-split", default="train")
     ap.add_argument("--sample-midi", type=int, default=5)
     ap.add_argument("--sample-sf", type=int, default=3)
     ap.add_argument("--rate", type=int, default=44100)
@@ -37,28 +28,42 @@ def main():
     args = ap.parse_args()
 
     outdir = Path(args.outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
 
-    print(f"🎶 Loading MIDI dataset: {args.midi_dataset}")
-    ds_midis = load_dataset(args.midi_dataset, split=args.midi_split)
-    midis = ds_midis.shuffle(seed=42).select(range(min(args.sample_midi, len(ds_midis))))
+    # ─── List and download MIDI files ──────────────────────────────
+    print(f"🎶 Listing MIDI files from {args.midi_dataset}")
+    midi_files = [
+        f for f in list_repo_files(args.midi_dataset, repo_type="dataset")
+        if f.lower().endswith((".mid", ".midi"))
+    ]
+    if not midi_files:
+        raise SystemExit(f"No MIDI files found in {args.midi_dataset}")
 
-    print(f"🎹 Loading SoundFont dataset: {args.soundfont_dataset}")
-    ds_sfs = load_dataset(args.soundfont_dataset, split=args.sf_split)
-    soundfonts = ds_sfs.shuffle(seed=42).select(range(min(args.sample_sf, len(ds_sfs))))
+    # ─── List and download SoundFonts ─────────────────────────────
+    print(f"🎹 Listing SoundFonts from {args.soundfont_dataset}")
+    sf_files = [
+        f for f in list_repo_files(args.soundfont_dataset, repo_type="dataset")
+        if f.lower().endswith((".sf2", ".sf3"))
+    ]
+    if not sf_files:
+        raise SystemExit(f"No SoundFonts found in {args.soundfont_dataset}")
 
-    for sf_row in soundfonts:
-        # Create a temporary SoundFont file
-        suffix = ".sf3" if sf_row["filename"].endswith(".sf3") else ".sf2"
-        tmp_sf = save_temp_file(sf_row["file"], sf_row["filename"], suffix)
+    # ─── Sample selections ────────────────────────────────────────
+    import random
+    random.shuffle(midi_files)
+    random.shuffle(sf_files)
+    midi_files = midi_files[: args.sample_midi]
+    sf_files = sf_files[: args.sample_sf]
 
-        for midi_row in midis:
-            tmp_midi = save_temp_file(midi_row["file"], midi_row["filename"], ".mid")
-            out = outdir / f"{Path(midi_row['filename']).stem}_{Path(sf_row['filename']).stem}.wav"
-            midi_to_audio(tmp_midi, tmp_sf, out, args.rate)
-            os.remove(tmp_midi)
+    # ─── Download and render ──────────────────────────────────────
+    for sf_file in sf_files:
+        sf_local = Path(hf_hub_download(args.soundfont_dataset, sf_file, repo_type="dataset"))
+        for midi_file in midi_files:
+            midi_local = Path(hf_hub_download(args.midi_dataset, midi_file, repo_type="dataset"))
+            out = outdir / f"{Path(midi_local.name).stem}_{Path(sf_local.name).stem}.wav"
+            midi_to_audio(midi_local, sf_local, out, args.rate)
 
-        os.remove(tmp_sf)
-        print(f"🧹 Deleted temporary {tmp_sf}")
+    print(f"✅ Done — rendered audio written to {outdir.resolve()}")
 
 if __name__ == "__main__":
     main()

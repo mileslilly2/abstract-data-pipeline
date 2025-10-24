@@ -21,6 +21,7 @@ out/
 
 # Node
 node_modules/
+audio_out/
 
 # Colab / notebooks
 /content/
