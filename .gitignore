@@ -1,4 +1,7 @@
 # Python
+
+
+.venv*/
 __pycache__/
 *.py[cod]
 *.pyo
@@ -8,6 +11,9 @@ build/
 out/
 .env
 .env.*
+.venv/
+.venv.*
+/bin/
 .ipynb_checkpoints/
 
 # OS

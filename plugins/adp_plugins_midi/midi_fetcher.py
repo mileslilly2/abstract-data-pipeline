@@ -10,8 +10,14 @@ from huggingface_hub import HfApi, HfFolder, upload_file, whoami
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+from dotenv import load_dotenv
 
 # ─── CONFIG ───────────────────────────────────────────────
+load_dotenv()
+
+# Get the token
+HF_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+
 UA = {"User-Agent": "ADP-MIDI-Fetcher/stream-parquet-1.0"}
 REQ_TIMEOUT = 60
 CHUNK = 1024 * 1024
