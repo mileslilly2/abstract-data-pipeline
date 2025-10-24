@@ -1,0 +1,9 @@
+chart_type: line
+data: audio_data/MIDI-Unprocessed_21_R1_2011_MID--AUDIO_R1-D8_09_Track09_wav_FluidR3
+  GM2-2_waveform.csv
+time: time
+value: amplitude
+title: Midi-Unprocessed 21 R1 2011 Mid--Audio R1-D8 09 Track09 Wav Fluidr3 Gm2-2 (Waveform)
+palette: Blues
+fps: 24
+out: out/MIDI-Unprocessed_21_R1_2011_MID--AUDIO_R1-D8_09_Track09_wav_FluidR3 GM2-2_waveform.mp4

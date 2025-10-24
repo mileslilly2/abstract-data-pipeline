@@ -1,0 +1,9 @@
+chart_type: line
+data: audio_data/MIDI-Unprocessed_R2_D2-19-21-22_mid--AUDIO-from_mp3_22_R2_2015_wav--1_MuseScore_General_tempo.csv
+time: time
+value: frequency
+title: Midi-Unprocessed R2 D2-19-21-22 Mid--Audio-From Mp3 22 R2 2015 Wav--1 Musescore
+  General (Tempo)
+palette: Reds
+fps: 24
+out: out/MIDI-Unprocessed_R2_D2-19-21-22_mid--AUDIO-from_mp3_22_R2_2015_wav--1_MuseScore_General_tempo.mp4

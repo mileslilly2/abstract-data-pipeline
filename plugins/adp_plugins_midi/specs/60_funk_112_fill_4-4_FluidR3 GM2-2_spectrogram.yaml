@@ -1,0 +1,8 @@
+chart_type: choropleth
+data: audio_data/60_funk_112_fill_4-4_FluidR3 GM2-2_spectrogram.csv
+time: time
+value: intensity
+title: 60 Funk 112 Fill 4-4 Fluidr3 Gm2-2 (Spectrogram)
+palette: Reds
+fps: 24
+out: out/60_funk_112_fill_4-4_FluidR3 GM2-2_spectrogram.mp4

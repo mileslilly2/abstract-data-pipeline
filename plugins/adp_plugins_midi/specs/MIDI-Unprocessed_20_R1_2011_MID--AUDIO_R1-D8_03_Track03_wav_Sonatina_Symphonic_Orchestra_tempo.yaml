@@ -1,0 +1,9 @@
+chart_type: line
+data: audio_data/MIDI-Unprocessed_20_R1_2011_MID--AUDIO_R1-D8_03_Track03_wav_Sonatina_Symphonic_Orchestra_tempo.csv
+time: time
+value: frequency
+title: Midi-Unprocessed 20 R1 2011 Mid--Audio R1-D8 03 Track03 Wav Sonatina Symphonic
+  Orchestra (Tempo)
+palette: Reds
+fps: 24
+out: out/MIDI-Unprocessed_20_R1_2011_MID--AUDIO_R1-D8_03_Track03_wav_Sonatina_Symphonic_Orchestra_tempo.mp4

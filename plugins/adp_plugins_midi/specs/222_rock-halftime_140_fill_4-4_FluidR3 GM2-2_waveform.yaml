@@ -1,0 +1,8 @@
+chart_type: line
+data: audio_data/222_rock-halftime_140_fill_4-4_FluidR3 GM2-2_waveform.csv
+time: time
+value: amplitude
+title: 222 Rock-Halftime 140 Fill 4-4 Fluidr3 Gm2-2 (Waveform)
+palette: Blues
+fps: 24
+out: out/222_rock-halftime_140_fill_4-4_FluidR3 GM2-2_waveform.mp4

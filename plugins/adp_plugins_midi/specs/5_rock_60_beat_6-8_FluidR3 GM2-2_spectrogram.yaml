@@ -1,0 +1,8 @@
+chart_type: choropleth
+data: audio_data/5_rock_60_beat_6-8_FluidR3 GM2-2_spectrogram.csv
+time: time
+value: intensity
+title: 5 Rock 60 Beat 6-8 Fluidr3 Gm2-2 (Spectrogram)
+palette: Reds
+fps: 24
+out: out/5_rock_60_beat_6-8_FluidR3 GM2-2_spectrogram.mp4
