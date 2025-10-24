@@ -19,7 +19,7 @@ RETRIES = 3
 MIDI_EXTS = (".mid", ".midi")
 GLOBAL_CAP = 1000  # hard stop
 
-HF_TOKEN = "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"   # replace with your token
+
 LICENSE = "CC0-1.0"
 DESCRIPTION = "Open MIDI datasets packaged as Parquet batches for efficient storage."
 
