@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 # midi_fetcher.py
-# Unified MIDI dataset fetcher / sampler
-# - Modes: sample | batch
-# - Hard global cap: 1000 MIDIs total
-# - Works with multiple open datasets
-# - Mirror fallback, retries, size limit, idempotent
+# Stream + delete MIDI fetcher that packages each dataset as a Parquet file
+# and uploads to Hugging Face Datasets Hub.
 
-import argparse, os, sys, time, json, random, shutil, tarfile, zipfile
+import argparse, os, sys, time, json, random, shutil, tarfile, zipfile, io, requests
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-import requests
+from typing import Dict, Any
+from huggingface_hub import HfApi, HfFolder, upload_file, whoami
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
-# ---------------- CONFIG ----------------
-UA = {"User-Agent": "ADP-MIDI-Fetcher/2.2"}
+# ─── CONFIG ───────────────────────────────────────────────
+UA = {"User-Agent": "ADP-MIDI-Fetcher/stream-parquet-1.0"}
 REQ_TIMEOUT = 60
 CHUNK = 1024 * 1024
 RETRIES = 3
 MIDI_EXTS = (".mid", ".midi")
-GLOBAL_CAP = 5000   # stop after this many extracted MIDIs
+GLOBAL_CAP = 1000  # hard stop
+
+
+LICENSE = "CC0-1.0"
+DESCRIPTION = "Open MIDI datasets packaged as Parquet batches for efficient storage."
 
 DATASETS: Dict[str, Dict[str, Any]] = {
-    # --- Small reliable sets ---
     "groove_v1_midionly": {
         "about": "Magenta Groove (drums only)",
         "mirrors": [
@@ -35,162 +38,165 @@ DATASETS: Dict[str, Dict[str, Any]] = {
         ],
         "archive_type": "zip",
     },
-    "jsb_chorales": {
-        "about": "Bach Chorales (JSB)",
-        "mirrors": [
-            "https://github.com/czhuang/JSB-Chorales-dataset/archive/refs/heads/master.zip",
-        ],
-        "archive_type": "zip",
-    },
-    "musicnet_midis": {
-        "about": "MusicNet reference MIDIs (Zenodo)",
-        "mirrors": [
-            "https://zenodo.org/records/5120004/files/musicnet_midis.tar.gz",
-        ],
-        "archive_type": "tar.gz",
-    },
-    # --- Medium / large sets ---
-    "lakh_midi_sample": {
-        "about": "Lakh MIDI (sample subset)",
-        "mirrors": [
-            "https://huggingface.co/datasets/colinraffel/lakh-midi/resolve/main/midifiles_sample.zip",
-        ],
-        "archive_type": "zip",
-    },
     "maestro_v3": {
         "about": "MAESTRO v3.0.0 (Magenta)",
         "mirrors": [
-            "https://huggingface.co/datasets/magenta/maestro-v3/resolve/main/maestro-v3.0.0-midi.zip",
             "https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0-midi.zip",
-        ],
-        "archive_type": "zip",
-    },
-    # --- Community mirrors (optional) ---
-    "nes_music_db": {
-        "about": "NES Music Database (converted)",
-        "mirrors": [
-            "https://archive.org/download/NESMusicDatabase/NESMusicDatabase-MIDI.zip",
         ],
         "archive_type": "zip",
     },
 }
 
-# --------------- HELPERS ----------------
+# ─── HELPERS ──────────────────────────────────────────────
 def log(msg): print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
 def head_ok(url):
     try:
         r = requests.head(url, headers=UA, allow_redirects=True, timeout=REQ_TIMEOUT)
         return r.status_code == 200
     except Exception:
         return False
-def stream_download(url, out, max_bytes):
+
+def stream_download(url, out):
     with requests.get(url, headers=UA, stream=True, timeout=REQ_TIMEOUT) as r:
         r.raise_for_status()
-        total = int(r.headers.get("Content-Length") or 0)
-        if max_bytes and total and total > max_bytes:
-            raise RuntimeError(f"Too large ({total/1e6:.1f} MB > limit)")
         tmp = out.with_suffix(".part")
         with open(tmp, "wb") as f:
             for chunk in r.iter_content(CHUNK):
-                if chunk: f.write(chunk)
+                if chunk:
+                    f.write(chunk)
         tmp.replace(out)
 
-def download(urls, out, max_bytes):
-    if out.exists(): return out
+def download(urls, out):
+    if out.exists():
+        log(f"↩️  Using cached {out.name}")
+        return out
     for u in urls:
-        log(f"→ {u}")
-        if not head_ok(u): continue
+        log(f"→ Attempting download: {u}")
+        if not head_ok(u):
+            log("⚠️  HEAD check failed; skipping mirror.")
+            continue
         for i in range(RETRIES):
             try:
-                stream_download(u, out, max_bytes)
-                log(f"✓ {out.name} downloaded ({out.stat().st_size/1e6:.1f} MB)")
+                stream_download(u, out)
+                log(f"✅ Downloaded {out.name} ({out.stat().st_size/1e6:.1f} MB)")
                 return out
             except Exception as e:
-                log(f"⚠️  {e}")
+                log(f"⚠️  Attempt {i+1} failed: {e}")
                 time.sleep(1+i)
-    raise RuntimeError("All mirrors failed")
+    raise RuntimeError("❌ All mirrors failed for " + out.name)
 
-def list_midis(path, typ):
-    if typ == "zip":
-        with zipfile.ZipFile(path) as z:
-            return [n for n in z.namelist() if n.lower().endswith(MIDI_EXTS)]
+def extract_midis(archive: Path, kind: str, out_dir: Path, max_files: int = 100):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths = []
+    log(f"📦 Extracting {archive.name} ({kind})")
+    if kind == "zip":
+        with zipfile.ZipFile(archive, "r") as z:
+            names = [n for n in z.namelist() if n.lower().endswith(MIDI_EXTS)]
+            random.shuffle(names)
+            for n in names[:max_files]:
+                dest = out_dir / Path(n).name
+                with z.open(n) as src, open(dest, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                paths.append(dest)
     else:
-        with tarfile.open(path, "r:gz") as t:
-            return [m.name for m in t.getmembers() if m.isfile() and m.name.lower().endswith(MIDI_EXTS)]
+        with tarfile.open(archive, "r:gz") as t:
+            names = [m for m in t.getmembers() if m.isfile() and m.name.lower().endswith(MIDI_EXTS)]
+            random.shuffle(names)
+            for m in names[:max_files]:
+                dest = out_dir / Path(m.name).name
+                with t.extractfile(m) as src, open(dest, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                paths.append(dest)
+    log(f"✓ Extracted {len(paths)} files")
+    return paths
 
-def extract_subset(path, typ, dest, chosen):
-    count = 0
-    if typ == "zip":
-        with zipfile.ZipFile(path) as z:
-            for name in chosen:
-                with z.open(name) as s, open(dest/Path(name).name,"wb") as f:
-                    shutil.copyfileobj(s, f, CHUNK)
-                count += 1
-    else:
-        with tarfile.open(path, "r:gz") as t:
-            for name in chosen:
-                m = t.getmember(name)
-                with t.extractfile(m) as s, open(dest/Path(name).name,"wb") as f:
-                    shutil.copyfileobj(s, f, CHUNK)
-                count += 1
-    return count
+def to_parquet(midi_paths, parquet_path, dataset_name):
+    """Read MIDI files and write them to a Parquet file."""
+    records = []
+    for path in midi_paths:
+        try:
+            data = path.read_bytes()
+            records.append({
+                "filename": path.name,
+                "size_kb": round(len(data)/1024, 1),
+                "dataset": dataset_name,
+                "midi_bytes": data,
+            })
+        except Exception as e:
+            log(f"⚠️  Failed reading {path}: {e}")
+    if not records:
+        log("⚠️  No files to write.")
+        return None
+    df = pd.DataFrame(records)
+    table = pa.Table.from_pandas(df)
+    pq.write_table(table, parquet_path, compression="snappy")
+    log(f"🧩 Wrote {len(df)} files → {parquet_path.name}")
+    return parquet_path
 
-# --------------- MAIN ----------------
-def run_dataset(name, cfg, dest, args, counter):
-    if counter["total"] >= GLOBAL_CAP:
-        log(f"🚫 Cap reached ({GLOBAL_CAP}), skipping {name}")
-        return
-    ds_dir = dest/name
-    ds_dir.mkdir(parents=True, exist_ok=True)
-    ext = ".zip" if cfg["archive_type"]=="zip" else ".tar.gz"
-    arc = ds_dir/f"{name}{ext}"
+def upload_to_hf_parquet(parquet_path: Path, username: str, dataset_name: str):
+    """Upload parquet file to Hugging Face dataset repo."""
+    HfFolder.save_token(HF_TOKEN)
+    api = HfApi()
+    repo_id = f"{username}/midis_parquet"
+    api.create_repo(repo_id, repo_type="dataset", private=False, exist_ok=True)
+    log(f"⬆️  Uploading {parquet_path.name} → {repo_id}")
+    upload_file(
+        path_or_fileobj=str(parquet_path),
+        path_in_repo=f"{dataset_name}/{parquet_path.name}",
+        repo_id=repo_id,
+        repo_type="dataset",
+        commit_message=f"Add {dataset_name} parquet batch",
+    )
+    log(f"✅ Uploaded parquet → https://huggingface.co/datasets/{repo_id}")
+
+def cleanup(*paths):
+    for p in paths:
+        if p.exists():
+            if p.is_dir(): shutil.rmtree(p, ignore_errors=True)
+            else: p.unlink(missing_ok=True)
+    log("🧹 Cleanup complete.")
+
+# ─── PIPELINE ─────────────────────────────────────────────
+def process_dataset(name, cfg, args, username, counter):
+    ds_dir = Path(args.dest) / name
+    arc_ext = ".zip" if cfg["archive_type"] == "zip" else ".tar.gz"
+    arc_path = ds_dir / f"{name}{arc_ext}"
 
     try:
-        arc = download(cfg["mirrors"], arc, args.max_bytes)
-        files = list_midis(arc, cfg["archive_type"])
-        if not files:
-            log(f"⚠️ No MIDIs found in {name}")
-            return
-        if args.mode=="sample":
-            random.shuffle(files)
-            files = files[:args.sample_per_dataset]
-        remaining = GLOBAL_CAP - counter["total"]
-        files = files[:remaining]
-        n = extract_subset(arc, cfg["archive_type"], ds_dir, files)
-        counter["total"] += n
-        log(f"✓ {name}: {n} extracted (total={counter['total']})")
+        arc_path.parent.mkdir(parents=True, exist_ok=True)
+        arc = download(cfg["mirrors"], arc_path)
+        midi_paths = extract_midis(arc, cfg["archive_type"], ds_dir, args.sample_per_dataset)
+        parquet_path = ds_dir / f"{name}.parquet"
+        parquet_file = to_parquet(midi_paths, parquet_path, name)
+        if parquet_file:
+            upload_to_hf_parquet(parquet_file, username, name)
+            counter["total"] += len(midi_paths)
+        cleanup(ds_dir)
     except Exception as e:
         log(f"✗ {name}: {e}")
+        cleanup(ds_dir)
 
-def parse_size(s):
-    if not s: return None
-    s=s.lower()
-    mult={"kb":1024,"mb":1024**2,"gb":1024**3}
-    for k,v in mult.items():
-        if s.endswith(k): return int(float(s[:-len(k)])*v)
-    return int(s)
-
+# ─── ENTRYPOINT ───────────────────────────────────────────
 def main():
-    ap=argparse.ArgumentParser(description="Download/sample public MIDI datasets")
-    ap.add_argument("--mode",choices=["sample","batch"],default="sample")
-    ap.add_argument("--sample-per-dataset",type=int,default=50)
-    ap.add_argument("--dest",default="data_midi")
-    ap.add_argument("--max-bytes",default=None)
-    ap.add_argument("--only",nargs="*")
-    ap.add_argument("--skip",nargs="*")
-    ap.add_argument("--seed",type=int,default=42)
-    args=ap.parse_args()
-    random.seed(args.seed)
-    args.max_bytes=parse_size(args.max_bytes)
-    dest=Path(args.dest); dest.mkdir(exist_ok=True)
-    selected=list(DATASETS.keys())
-    if args.only: selected=[k for k in selected if k in args.only]
-    if args.skip: selected=[k for k in selected if k not in args.skip]
-    counter={"total":0}
-    for name in selected:
-        if counter["total"]>=GLOBAL_CAP: break
-        run_dataset(name, DATASETS[name], dest, args, counter)
-    log(f"✅ Done — {counter['total']} MIDIs total (limit {GLOBAL_CAP}).")
+    ap = argparse.ArgumentParser(description="Stream, pack, and upload MIDI datasets as Parquet.")
+    ap.add_argument("--sample-per-dataset", type=int, default=50)
+    ap.add_argument("--dest", default="data_midi")
+    ap.add_argument("--seed", type=int, default=42)
+    args = ap.parse_args()
 
-if __name__=="__main__":
+    random.seed(args.seed)
+    Path(args.dest).mkdir(exist_ok=True)
+    HfFolder.save_token(HF_TOKEN)
+    username = whoami(HF_TOKEN)["name"]
+    log(f"👤 Using Hugging Face username: {username}")
+
+    counter = {"total": 0}
+    for name, cfg in DATASETS.items():
+        if counter["total"] >= GLOBAL_CAP: break
+        process_dataset(name, cfg, args, username, counter)
+
+    log(f"✅ Finished all datasets — {counter['total']} MIDIs processed.")
+
+if __name__ == "__main__":
     main()
