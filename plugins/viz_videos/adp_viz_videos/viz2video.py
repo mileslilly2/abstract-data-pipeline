@@ -288,9 +288,15 @@ def build_renderer(spec: Spec, df: pd.DataFrame):
 def run(spec_path: str) -> str:
     with open(spec_path, "r", encoding="utf-8") as f:
         d = yaml.safe_load(f)
-    spec = Spec.from_dict(d)
-    if not spec.title:
-        spec.title = derive_title_from_spec(spec_path)
+        spec = Spec.from_dict(d)
+
+# Make data path relative to spec file if not absolute
+        data_path = Path(spec.data)
+        if not data_path.is_absolute():
+            spec.data = str((Path(spec_path).parent / data_path).resolve())
+
+        if not spec.title:
+            spec.title = derive_title_from_spec(spec_path)
 
     df = read_table(spec.data)
     rend = build_renderer(spec, df)
@@ -316,10 +322,57 @@ def run(spec_path: str) -> str:
 
 def main(argv=None):
     import argparse
-    ap = argparse.ArgumentParser(description="Time-series → video")
-    ap.add_argument("--spec", required=True, help="YAML spec file")
-    args = ap.parse_args(argv)
-    run(args.spec)
+    from pathlib import Path
+    import sys
+
+    parser = argparse.ArgumentParser(
+        description="Generalized time-series → video engine (supports per-plugin specs directories)"
+    )
+    parser.add_argument("--spec", help="YAML spec filename or full path", type=str)
+    parser.add_argument("--index", help="Index of spec in the given --dir folder", type=int)
+    parser.add_argument("--dir", help="Path to specs directory (defaults to ./specs)", type=str, default="specs")
+    args = parser.parse_args(argv)
+
+    specs_dir = Path(args.dir).resolve()
+    if not specs_dir.exists():
+        sys.exit(f"❌ Specs directory not found: {specs_dir}")
+
+    spec_path = None
+
+    if args.index is not None:
+        specs = sorted(specs_dir.glob("*.yaml"))
+        if not specs:
+            sys.exit(f"❌ No YAML specs found in {specs_dir}")
+        try:
+            spec_path = specs[args.index]
+            print(f"✅ Using spec #{args.index}: {spec_path.name}")
+        except IndexError:
+            sys.exit(f"❌ Invalid index {args.index}. Only {len(specs)} specs available in {specs_dir}.")
+
+    elif args.spec:
+        # allow relative path or filename relative to the given dir
+        candidate = Path(args.spec)
+        spec_path = candidate if candidate.exists() else specs_dir / args.spec
+        if not spec_path.exists():
+            sys.exit(f"❌ Spec not found: {spec_path}")
+
+    else:
+        specs = sorted(specs_dir.glob("*.yaml"))
+        if not specs:
+            sys.exit(f"❌ No specs found in {specs_dir}")
+        print(f"Available specs in {specs_dir}:")
+        for i, s in enumerate(specs):
+            print(f" [{i}] {s.name}")
+        try:
+            choice = int(input("Select index: "))
+            spec_path = specs[choice]
+            print(f"✅ Using spec: {spec_path.name}")
+        except (ValueError, IndexError):
+            sys.exit("❌ Invalid selection.")
+
+    run(str(spec_path))
+
 
 if __name__ == "__main__":
     main()
+
