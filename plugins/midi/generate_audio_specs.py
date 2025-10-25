@@ -35,21 +35,37 @@ def write_csv(df: pd.DataFrame, path: Path):
     log(f"💾 Wrote CSV → {path}")
 
 def write_spec(csv_path: Path, mode: str, title: str):
-    """Generate YAML spec for viz2video.py"""
+    """Generate YAML spec for viz2video.py (now supports audio_waveform renderer)."""
+
+    # Select the right renderer
+    if mode in ["waveform", "energy", "pitch", "tempo"]:
+        chart_type = "audio_waveform"
+    elif mode == "spectrogram":
+        chart_type = "audio_spectrogram"  # placeholder for later spectrogram renderer
+    else:
+        chart_type = "choropleth"  # fallback
+
+    # Select value field based on mode
+    value_map = {
+        "waveform": "amplitude",
+        "energy": "rms",
+        "spectrogram": "intensity",
+        "beats": "onset_strength",
+        "tempo": "tempo",
+        "pitch": "frequency"
+    }
+
     spec = {
-        "chart_type": "line" if mode in ["waveform", "energy", "pitch", "tempo"] else "choropleth",
+        "chart_type": chart_type,
         "data": str(csv_path),
         "time": "time",
-        "value": "amplitude" if mode == "waveform" else (
-            "rms" if mode == "energy" else (
-                "intensity" if mode == "spectrogram" else (
-                    "onset_strength" if mode == "beats" else "frequency"
-                ))),
+        "value": value_map.get(mode, "value"),
         "title": title,
-        "palette": "Blues" if mode == "waveform" else "Reds",
+        "palette": "Blues" if mode in ["waveform", "energy"] else "Reds",
         "fps": 24,
         "out": f"out/{csv_path.stem}.mp4"
     }
+
     out_yaml = SPEC_DIR / f"{csv_path.stem}.yaml"
     out_yaml.parent.mkdir(parents=True, exist_ok=True)
     with open(out_yaml, "w", encoding="utf-8") as f:

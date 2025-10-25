@@ -4,7 +4,14 @@
 # Supports: choropleth | line | bar_race
 
 from __future__ import annotations
-import sys, math, warnings, re, subprocess, textwrap
+from plugins.utils.path_resolver import resolve_data_path
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+
+import  math, warnings, re, subprocess, textwrap
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 from pathlib import Path
@@ -17,7 +24,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import imageio.v2 as imageio
 import yaml
-
 
 # Optional (only needed for choropleth)
 try:
@@ -278,11 +284,124 @@ class ChoroplethRenderer(BaseRenderer):
         finally:
             writer.close()
 
+
+class LineRenderer(BaseRenderer):
+    def render(self):
+        sp = self.spec
+        writer = self.writer()
+        ycol = sp.value or self.df.columns[-1]
+
+        all_vals = pd.to_numeric(self.df[ycol], errors="coerce").dropna()
+        vmin = sp.vmin if sp.vmin is not None else float(all_vals.min())
+        vmax = sp.vmax if sp.vmax is not None else float(all_vals.max())
+
+        try:
+            for t in self.times:
+                cur = self.df[self.df["_time"] <= t]
+
+                fig = make_figure(sp.width, sp.height, sp.dpi)
+                ax = fig.add_subplot(111)
+
+                ax.plot(cur["_time"], cur[ycol], color="tab:blue", linewidth=3)
+                ax.set_xlim(self.df["_time"].min(), self.df["_time"].max())
+                ax.set_ylim(vmin, vmax)
+                ax.grid(True, alpha=0.3)
+
+                title = wrap_title(sp.title or derive_title_from_spec(sp.data))
+                fig.suptitle(title, fontsize=26, weight="bold", y=0.96)
+
+                ax.text(
+                    0.95, 0.9, str(pd.to_datetime(t).year),
+                    transform=ax.transAxes, ha="right", va="top",
+                    fontsize=22, weight="bold", color="#444"
+                )
+
+                fig.tight_layout()
+                nd = fig_to_ndarray(fig)
+                plt.close(fig)
+                for _ in range(sp.hold_frames):
+                    writer.append_data(nd)
+        finally:
+            writer.close()
+class AudioWaveRenderer(BaseRenderer):
+    """Render waveform or energy time-series as an animated audio visualization."""
+    def render(self):
+        sp = self.spec
+        writer = self.writer()
+        ycol = sp.value or "energy"
+        tcol = sp.time or "frame"
+
+        vals = pd.to_numeric(self.df[ycol], errors="coerce").fillna(0)
+        vmin, vmax = float(vals.min()), float(vals.max())
+
+        try:
+            for i, t in enumerate(self.df[tcol]):
+                fig = make_figure(sp.width, sp.height, sp.dpi)
+                ax = fig.add_subplot(111)
+
+                ax.plot(self.df[tcol][:i], self.df[ycol][:i], color="dodgerblue", linewidth=2)
+                ax.set_xlim(self.df[tcol].min(), self.df[tcol].max())
+                ax.set_ylim(vmin, vmax)
+                ax.axis("off")
+
+                fig.suptitle(
+                    wrap_title(sp.title or derive_title_from_spec(sp.data)),
+                    fontsize=26, weight="bold", y=0.96
+                )
+
+                nd = fig_to_ndarray(fig)
+                plt.close(fig)
+                for _ in range(sp.hold_frames):
+                    writer.append_data(nd)
+        finally:
+            writer.close()
+
+
+class BarRaceRenderer(BaseRenderer):
+    def render(self):
+        sp = self.spec
+        writer = self.writer()
+
+        try:
+            for t in self.times:
+                cur = self.df[self.df["_time"] == t]
+                if sp.group and sp.value:
+                    cur = cur.groupby(sp.group)[sp.value].sum().nlargest(sp.top_n).reset_index()
+
+                fig = make_figure(sp.width, sp.height, sp.dpi)
+                ax = fig.add_subplot(111)
+                ax.barh(cur[sp.group], cur[sp.value], color="tab:blue")
+                ax.invert_yaxis()
+
+                title = wrap_title(sp.title or derive_title_from_spec(sp.data))
+                fig.suptitle(title, fontsize=26, weight="bold", y=0.96)
+                ax.text(
+                    0.98, 0.1, str(pd.to_datetime(t).year),
+                    transform=ax.transAxes, ha="right", va="bottom",
+                    fontsize=28, weight="bold", color="#333"
+                )
+
+                fig.tight_layout()
+                nd = fig_to_ndarray(fig)
+                plt.close(fig)
+                for _ in range(sp.hold_frames):
+                    writer.append_data(nd)
+        finally:
+            writer.close()
+
+
+
 # ---------- FACTORY ----------
 def build_renderer(spec: Spec, df: pd.DataFrame):
-    if spec.chart_type.lower() == "choropleth":
+    chart = spec.chart_type.lower()
+    if chart == "choropleth":
         return ChoroplethRenderer(spec, df)
-    raise ValueError(f"Unsupported chart_type: {spec.chart_type}")
+    elif chart == "line":
+        return AudioWaveRenderer(spec, df)  # backward compat
+    elif chart == "audio_waveform":
+        return AudioWaveRenderer(spec, df)
+    else:
+        raise ValueError(f"Unsupported chart_type: {spec.chart_type}")
 
 # ---------- CLI ----------
 def run(spec_path: str) -> str:
@@ -293,7 +412,8 @@ def run(spec_path: str) -> str:
 # Make data path relative to spec file if not absolute
         data_path = Path(spec.data)
         if not data_path.is_absolute():
-            spec.data = str((Path(spec_path).parent / data_path).resolve())
+            spec.data = str(resolve_data_path(Path(spec_path), data_path))
+
 
         if not spec.title:
             spec.title = derive_title_from_spec(spec_path)
@@ -318,7 +438,39 @@ def run(spec_path: str) -> str:
     ]
     subprocess.run(cmd, check=True)
     print(f"📱 Vertical formatted version written to: {out_path}")
+
+    # --- Optional audio merge step (look for matching .wav in audio_out) ---
+    audio_path = Path(spec.data).with_suffix(".wav").name
+    audio_file = Path("plugins/midi/audio_out") / audio_path  # adjust if your folder differs
+
+    if audio_file.exists():
+        with_audio = out_path.with_name(f"{out_path.stem}_with_audio.mp4")
+        subprocess.run([
+            "ffmpeg", "-y", "-i", str(out_path),
+            "-i", str(audio_file),
+            "-c:v", "copy", "-c:a", "aac", "-shortest", str(with_audio)
+        ], check=True)
+        print(f"🎧 Audio merged: {with_audio}")
+    else:
+        print(f"⚠️ No matching audio file found: {audio_file}")
+
+    # --- Optional audio merge step (look for matching .wav in audio_out) ---
+    audio_path = Path(spec.data).with_suffix(".wav").name
+    audio_file = Path("plugins/midi/audio_out") / audio_path  # adjust if your folder differs
+
+    if audio_file.exists():
+        with_audio = out_path.with_name(f"{out_path.stem}_with_audio.mp4")
+        subprocess.run([
+            "ffmpeg", "-y", "-i", str(out_path),
+            "-i", str(audio_file),
+            "-c:v", "copy", "-c:a", "aac", "-shortest", str(with_audio)
+        ], check=True)
+        print(f"🎧 Audio merged: {with_audio}")
+    else:
+        print(f"⚠️ No matching audio file found: {audio_file}")
+
     return str(out_path)
+
 
 def main(argv=None):
     import argparse
