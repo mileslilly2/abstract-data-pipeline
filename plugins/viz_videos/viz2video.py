@@ -110,8 +110,8 @@ class Spec:
     palette: str = "Reds"
     width: int = 1080
     height: int = 1920
-    dpi: int = 150
-    fps: int = 24
+    dpi: int = 100
+    fps: int = 12
     bitrate: str = "8M"
     out: str = "out.mp4"
     title: Optional[str] = None
@@ -323,6 +323,7 @@ def build_renderer(spec: Spec, df: pd.DataFrame):
 
 # ---------- CLI ----------
 def run(spec_path: str) -> str:
+    """Main entry point: resolve spec, ensure audio, render video, and merge tracks."""
     with open(spec_path, "r", encoding="utf-8") as f:
         d = yaml.safe_load(f)
         spec = Spec.from_dict(d)
@@ -332,10 +333,53 @@ def run(spec_path: str) -> str:
         if not spec.title:
             spec.title = derive_title_from_spec(spec_path)
 
+    # --- Determine if this spec expects audio ---
+    chart = (spec.chart_type or "").lower()
+    expects_audio = (
+        "midi" in spec.data.lower()
+        or "audio" in spec.data.lower()
+        or chart in ("audio_waveform", "line")
+    )
+
+    # --- Compute audio + MIDI paths ---
+    audio_path = Path(spec.data).with_suffix(".wav").name
+    midi_path = Path(spec.data).with_suffix(".mid").name
+    audio_file = Path("plugins/midi/audio_out") / audio_path
+    midi_file = Path("plugins/midi/midi_in") / midi_path
+    soundfont_path = Path("plugins/midi/soundfonts/MuseScore_General.sf2")
+
+    # --- If this spec expects audio, ensure the file exists ---
+    if expects_audio:
+        if not audio_file.exists():
+            if midi_file.exists():
+                print(f"🎹 Generating audio from MIDI: {midi_file}")
+                audio_file.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    subprocess.run([
+                        "fluidsynth", "-ni",
+                        str(soundfont_path),
+                        str(midi_file),
+                        "-F", str(audio_file),
+                        "-r", "44100"
+                    ], check=True)
+                    print(f"✅ Audio generated: {audio_file}")
+                except subprocess.CalledProcessError as e:
+                    print(f"❌ Failed to generate audio from {midi_file}: {e}")
+                    print("⏭ Skipping video generation for this spec.")
+                    return ""
+            else:
+                print(f"❌ No matching .wav or .mid found for {spec.data}")
+                print("⏭ Skipping video generation for this spec.")
+                return ""
+        else:
+            print(f"🎵 Found existing audio file: {audio_file}")
+
+    # --- Render the video frames ---
     df = read_table(spec.data)
     rend = build_renderer(spec, df)
     rend.render()
 
+    # --- Vertical reformatting step ---
     src = Path(spec.out)
     out_path = src.with_name(f"{src.stem}_vertical.mp4")
 
@@ -352,10 +396,8 @@ def run(spec_path: str) -> str:
     subprocess.run(cmd, check=True)
     print(f"📱 Vertical formatted version written to: {out_path}")
 
-    audio_path = Path(spec.data).with_suffix(".wav").name
-    audio_file = Path("plugins/midi/audio_out") / audio_path
-
-    if audio_file.exists():
+    # --- Merge audio if it exists (or was generated) ---
+    if expects_audio and audio_file.exists():
         with_audio = out_path.with_name(f"{out_path.stem}_with_audio.mp4")
         subprocess.run([
             "ffmpeg", "-y", "-i", str(out_path),
@@ -364,7 +406,7 @@ def run(spec_path: str) -> str:
         ], check=True)
         print(f"🎧 Audio merged: {with_audio}")
     else:
-        print(f"⚠️ No matching audio file found: {audio_file}")
+        print(f"⚠️ No audio merge performed for chart_type '{spec.chart_type}'.")
 
     return str(out_path)
 
