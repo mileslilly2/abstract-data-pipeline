@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/40_hiphop_110_beat_4-4_Sonatina_Symphonic_Orchestra_waveform.csv
+time: time
+value: amplitude
+title: 40 Hiphop 110 Beat 4-4 Sonatina Symphonic Orchestra (Waveform)
+palette: Blues
+fps: 24
+out: out/40_hiphop_110_beat_4-4_Sonatina_Symphonic_Orchestra_waveform.mp4

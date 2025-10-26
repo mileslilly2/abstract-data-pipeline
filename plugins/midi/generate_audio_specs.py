@@ -10,8 +10,8 @@ from datasets import load_dataset
 # ─────────────────────────── CONFIG ─────────────────────────────
 SR = 22050  # target sample rate for analysis
 MAX_SAMPLES = 5  # limit for HF streaming mode
-AUDIO_DIR = Path("audio_data")
-SPEC_DIR = Path("specs")
+AUDIO_DIR = Path("plugins/midi/audio_data")
+SPEC_DIR = Path("plugins/midi/specs")
 AUDIO_DIR.mkdir(exist_ok=True, parents=True)
 SPEC_DIR.mkdir(exist_ok=True, parents=True)
 

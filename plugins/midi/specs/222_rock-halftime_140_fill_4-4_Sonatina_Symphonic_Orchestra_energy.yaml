@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/222_rock-halftime_140_fill_4-4_Sonatina_Symphonic_Orchestra_energy.csv
+time: time
+value: rms
+title: 222 Rock-Halftime 140 Fill 4-4 Sonatina Symphonic Orchestra (Energy)
+palette: Blues
+fps: 24
+out: out/222_rock-halftime_140_fill_4-4_Sonatina_Symphonic_Orchestra_energy.mp4

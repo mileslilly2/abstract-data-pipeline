@@ -1,4 +1,4 @@
-chart_type: line
+chart_type: audio_waveform
 data: audio_data/MIDI-Unprocessed_12_R3_2011_MID--AUDIO_R3-D4_07_Track07_wav_FluidR3
   GM2-2_waveform.csv
 time: time

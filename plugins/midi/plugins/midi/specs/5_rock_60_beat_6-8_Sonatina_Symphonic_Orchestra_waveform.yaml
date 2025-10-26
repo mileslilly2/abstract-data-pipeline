@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: plugins/midi/audio_data/5_rock_60_beat_6-8_Sonatina_Symphonic_Orchestra_waveform.csv
+time: time
+value: amplitude
+title: 5 Rock 60 Beat 6-8 Sonatina Symphonic Orchestra (Waveform)
+palette: Blues
+fps: 24
+out: out/5_rock_60_beat_6-8_Sonatina_Symphonic_Orchestra_waveform.mp4

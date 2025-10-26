@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/148_gospel_120_fill_4-4_MuseScore_General_waveform.csv
+time: time
+value: amplitude
+title: 148 Gospel 120 Fill 4-4 Musescore General (Waveform)
+palette: Blues
+fps: 24
+out: out/148_gospel_120_fill_4-4_MuseScore_General_waveform.mp4

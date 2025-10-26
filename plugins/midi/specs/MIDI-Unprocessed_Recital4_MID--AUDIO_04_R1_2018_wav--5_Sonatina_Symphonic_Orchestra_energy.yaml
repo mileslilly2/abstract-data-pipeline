@@ -1,0 +1,9 @@
+chart_type: audio_waveform
+data: audio_data/MIDI-Unprocessed_Recital4_MID--AUDIO_04_R1_2018_wav--5_Sonatina_Symphonic_Orchestra_energy.csv
+time: time
+value: rms
+title: Midi-Unprocessed Recital4 Mid--Audio 04 R1 2018 Wav--5 Sonatina Symphonic Orchestra
+  (Energy)
+palette: Blues
+fps: 24
+out: out/MIDI-Unprocessed_Recital4_MID--AUDIO_04_R1_2018_wav--5_Sonatina_Symphonic_Orchestra_energy.mp4

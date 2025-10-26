@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/60_funk_112_fill_4-4_MuseScore_General_energy.csv
+time: time
+value: rms
+title: 60 Funk 112 Fill 4-4 Musescore General (Energy)
+palette: Blues
+fps: 24
+out: out/60_funk_112_fill_4-4_MuseScore_General_energy.mp4

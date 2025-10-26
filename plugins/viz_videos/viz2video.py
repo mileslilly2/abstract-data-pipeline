@@ -7,11 +7,11 @@ from __future__ import annotations
 from plugins.utils.path_resolver import resolve_data_path
 import sys
 from pathlib import Path
+import os
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-
-import  math, warnings, re, subprocess, textwrap
+import math, warnings, re, subprocess, textwrap
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 from pathlib import Path
@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import imageio.v2 as imageio
 import yaml
+from tqdm import tqdm  # <-- NEW
 
 # Optional (only needed for choropleth)
 try:
@@ -36,22 +37,18 @@ warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
 
 # ---------- HELPERS ----------
 def split_camel_case(s: str) -> str:
-    """Convert CamelCase or PascalCase into spaced words."""
     return re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', s)
 
 def derive_title_from_spec(path: str) -> str:
-    """Convert YAML filename into a readable, spaced title."""
     base = Path(path).stem
     base = re.sub(r'[_\-]+', ' ', base)
     return base.replace("map", "").strip().title()
 
 def wrap_title(title: str, width_chars: int = 28) -> str:
-    """Wrap long titles into multiple lines for display."""
     return textwrap.fill(title, width=width_chars)
 
 # ---------- FIGURE CONVERSION ----------
 def fig_to_ndarray(fig: plt.Figure) -> np.ndarray:
-    """Convert a Matplotlib figure to an RGB numpy array safely across backends."""
     fig.canvas.draw()
     w, h = fig.canvas.get_width_height()
     try:
@@ -93,7 +90,6 @@ def safe_title(fmt: Optional[str], **kw) -> str:
         return fmt
 
 def make_figure(width_px: int, height_px: int, dpi: int) -> plt.Figure:
-    """Create a Matplotlib figure that truly fills a 1080x1920 9:16 frame."""
     fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi)
     fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
     return fig
@@ -152,16 +148,24 @@ class BaseRenderer:
             self.spec.hold_frames = frames_per_time
             print(f"[INFO] Auto duration: {len(self.times)} steps × {frames_per_time} holds @ {self.spec.fps}fps")
 
+
+
     def writer(self):
+        """Always use CPU-based libx264 encoder for stability."""
+        codec = "libx264"
+        print(f"[INFO] Using CPU encoder: {codec}")
         return imageio.get_writer(
             self.spec.out,
             fps=self.spec.fps,
-            codec="libx264",
+            codec=codec,
             bitrate=self.spec.bitrate,
             ffmpeg_log_level="error",
-            output_params=["-pix_fmt", "yuv420p"],
+            output_params=[
+                "-pix_fmt", "yuv420p",
+            ],
         )
 
+      
 # ---------- CHOROPLETH RENDERER ----------
 class ChoroplethRenderer(BaseRenderer):
     def render(self):
@@ -180,7 +184,7 @@ class ChoroplethRenderer(BaseRenderer):
 
         writer = self.writer()
         try:
-            for t in self.times:
+            for t in tqdm(self.times, desc="[Choropleth] Rendering", unit="frame"):
                 cur = self.df[self.df["_time"] == t]
                 if sp.join_right_on in gdf.columns:
                     gdf[sp.join_right_on] = gdf[sp.join_right_on].astype(str).str.zfill(5)
@@ -190,91 +194,29 @@ class ChoroplethRenderer(BaseRenderer):
 
                 fig = make_figure(sp.width, sp.height, sp.dpi)
                 ax = fig.add_subplot(111)
-
-                # Clean legend label (split CamelCase)
                 legend_label = split_camel_case(sp.value.replace("_", " "))
-
-                                # --- Draw base map ---
-                frame_gdf.plot(
-                    column=sp.value,
-                    ax=ax,
-                    cmap=cmap,
-                    linewidth=0.2,
-                    edgecolor="0.3",
-                    norm=norm
-                )
+                frame_gdf.plot(column=sp.value, ax=ax, cmap=cmap, linewidth=0.2, edgecolor="0.3", norm=norm)
                 ax.set_axis_off()
 
-                # --- Full-width legend manually ---
                 if sp.legend:
-                    cax = fig.add_axes([0.1, 0.06, 0.8, 0.015])  # x, y, width, height
-                    cb = mpl.colorbar.ColorbarBase(
-                        cax,
-                        cmap=cmap,
-                        norm=norm,
-                        orientation="horizontal"
-                    )
-                    # Split CamelCase & underscores
-                    cb.set_label(
-                        re.sub(r'([a-z])([A-Z])', r'\1 \2', sp.value.replace("_", " ")).title(),
-                        fontsize=14,
-                        weight="bold"
-                    )
+                    cax = fig.add_axes([0.1, 0.06, 0.8, 0.015])
+                    cb = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, orientation="horizontal")
+                    cb.set_label(re.sub(r'([a-z])([A-Z])', r'\1 \2', sp.value.replace("_", " ")).title(),
+                                 fontsize=14, weight="bold")
 
-                # --- Determine current year ---
                 if sp.time in cur.columns and not cur[sp.time].dropna().empty:
                     year_label = str(int(cur[sp.time].iloc[0]))
                 else:
                     year_label = str(pd.to_datetime(t, errors="coerce").year)
 
-                # --- Title at top ---
-                # --- Title with {time:%Y} placeholder support ---
-                # --- Smarter title placeholder support ---
-                # --- Simple title: split on capital letters for readability ---
-                if sp.title:
-                    base_title = re.sub(r'([a-z])([A-Z])', r'\1 \2', sp.title).strip()
-                else:
-                    base_title = derive_title_from_spec(sp.data)
-
+                base_title = re.sub(r'([a-z])([A-Z])', r'\1 \2', sp.title or derive_title_from_spec(sp.data)).strip()
                 wrapped_title = wrap_title(base_title)
-                fig.suptitle(
-                    wrapped_title,
-                    fontsize=30,
-                    fontweight="bold",
-                    ha="center",
-                    y=0.985,
-                    color="#222",
-                )
+                fig.suptitle(wrapped_title, fontsize=30, fontweight="bold", ha="center", y=0.985, color="#222")
 
-
-
-                wrapped_title = wrap_title(base_title)
-                fig.suptitle(
-                    wrapped_title,
-                    fontsize=30,
-                    fontweight="bold",
-                    ha="center",
-                    y=0.985,
-                    color="#222",
-                )
-
-
-                # --- Year label above map ---
-                ax.text(
-                    0.5, 1.02, year_label,
-                    transform=ax.transAxes,
-                    ha="center", va="bottom",
-                    fontsize=22, weight="bold", color="#333"
-                )
-
-                # --- North arrow bottom-right ---
-                ax.text(
-                    0.96, -0.25, "↑ N",
-                    transform=ax.transAxes,
-                    ha="right", va="bottom",
-                    fontsize=36, fontweight="bold", color="#111"
-                )
-
+                ax.text(0.5, 1.02, year_label, transform=ax.transAxes,
+                        ha="center", va="bottom", fontsize=22, weight="bold", color="#333")
+                ax.text(0.96, -0.25, "↑ N", transform=ax.transAxes,
+                        ha="right", va="bottom", fontsize=36, fontweight="bold", color="#111")
 
                 fig.tight_layout()
                 nd = fig_to_ndarray(fig)
@@ -284,38 +226,29 @@ class ChoroplethRenderer(BaseRenderer):
         finally:
             writer.close()
 
-
 class LineRenderer(BaseRenderer):
     def render(self):
         sp = self.spec
         writer = self.writer()
         ycol = sp.value or self.df.columns[-1]
-
         all_vals = pd.to_numeric(self.df[ycol], errors="coerce").dropna()
         vmin = sp.vmin if sp.vmin is not None else float(all_vals.min())
         vmax = sp.vmax if sp.vmax is not None else float(all_vals.max())
 
         try:
-            for t in self.times:
+            for t in tqdm(self.times, desc="[Line] Rendering", unit="frame"):
                 cur = self.df[self.df["_time"] <= t]
-
                 fig = make_figure(sp.width, sp.height, sp.dpi)
                 ax = fig.add_subplot(111)
-
                 ax.plot(cur["_time"], cur[ycol], color="tab:blue", linewidth=3)
                 ax.set_xlim(self.df["_time"].min(), self.df["_time"].max())
                 ax.set_ylim(vmin, vmax)
                 ax.grid(True, alpha=0.3)
-
                 title = wrap_title(sp.title or derive_title_from_spec(sp.data))
                 fig.suptitle(title, fontsize=26, weight="bold", y=0.96)
-
-                ax.text(
-                    0.95, 0.9, str(pd.to_datetime(t).year),
-                    transform=ax.transAxes, ha="right", va="top",
-                    fontsize=22, weight="bold", color="#444"
-                )
-
+                ax.text(0.95, 0.9, str(pd.to_datetime(t).year),
+                        transform=ax.transAxes, ha="right", va="top",
+                        fontsize=22, weight="bold", color="#444")
                 fig.tight_layout()
                 nd = fig_to_ndarray(fig)
                 plt.close(fig)
@@ -323,32 +256,26 @@ class LineRenderer(BaseRenderer):
                     writer.append_data(nd)
         finally:
             writer.close()
+
 class AudioWaveRenderer(BaseRenderer):
-    """Render waveform or energy time-series as an animated audio visualization."""
     def render(self):
         sp = self.spec
         writer = self.writer()
         ycol = sp.value or "energy"
         tcol = sp.time or "frame"
-
         vals = pd.to_numeric(self.df[ycol], errors="coerce").fillna(0)
         vmin, vmax = float(vals.min()), float(vals.max())
 
         try:
-            for i, t in enumerate(self.df[tcol]):
+            for i, t in enumerate(tqdm(self.df[tcol], desc="[AudioWave] Rendering", unit="frame")):
                 fig = make_figure(sp.width, sp.height, sp.dpi)
                 ax = fig.add_subplot(111)
-
                 ax.plot(self.df[tcol][:i], self.df[ycol][:i], color="dodgerblue", linewidth=2)
                 ax.set_xlim(self.df[tcol].min(), self.df[tcol].max())
                 ax.set_ylim(vmin, vmax)
                 ax.axis("off")
-
-                fig.suptitle(
-                    wrap_title(sp.title or derive_title_from_spec(sp.data)),
-                    fontsize=26, weight="bold", y=0.96
-                )
-
+                fig.suptitle(wrap_title(sp.title or derive_title_from_spec(sp.data)),
+                             fontsize=26, weight="bold", y=0.96)
                 nd = fig_to_ndarray(fig)
                 plt.close(fig)
                 for _ in range(sp.hold_frames):
@@ -356,31 +283,24 @@ class AudioWaveRenderer(BaseRenderer):
         finally:
             writer.close()
 
-
 class BarRaceRenderer(BaseRenderer):
     def render(self):
         sp = self.spec
         writer = self.writer()
-
         try:
-            for t in self.times:
+            for t in tqdm(self.times, desc="[BarRace] Rendering", unit="frame"):
                 cur = self.df[self.df["_time"] == t]
                 if sp.group and sp.value:
                     cur = cur.groupby(sp.group)[sp.value].sum().nlargest(sp.top_n).reset_index()
-
                 fig = make_figure(sp.width, sp.height, sp.dpi)
                 ax = fig.add_subplot(111)
                 ax.barh(cur[sp.group], cur[sp.value], color="tab:blue")
                 ax.invert_yaxis()
-
                 title = wrap_title(sp.title or derive_title_from_spec(sp.data))
                 fig.suptitle(title, fontsize=26, weight="bold", y=0.96)
-                ax.text(
-                    0.98, 0.1, str(pd.to_datetime(t).year),
-                    transform=ax.transAxes, ha="right", va="bottom",
-                    fontsize=28, weight="bold", color="#333"
-                )
-
+                ax.text(0.98, 0.1, str(pd.to_datetime(t).year),
+                        transform=ax.transAxes, ha="right", va="bottom",
+                        fontsize=28, weight="bold", color="#333")
                 fig.tight_layout()
                 nd = fig_to_ndarray(fig)
                 plt.close(fig)
@@ -388,8 +308,6 @@ class BarRaceRenderer(BaseRenderer):
                     writer.append_data(nd)
         finally:
             writer.close()
-
-
 
 # ---------- FACTORY ----------
 def build_renderer(spec: Spec, df: pd.DataFrame):
@@ -397,7 +315,7 @@ def build_renderer(spec: Spec, df: pd.DataFrame):
     if chart == "choropleth":
         return ChoroplethRenderer(spec, df)
     elif chart == "line":
-        return AudioWaveRenderer(spec, df)  # backward compat
+        return AudioWaveRenderer(spec, df)
     elif chart == "audio_waveform":
         return AudioWaveRenderer(spec, df)
     else:
@@ -408,13 +326,9 @@ def run(spec_path: str) -> str:
     with open(spec_path, "r", encoding="utf-8") as f:
         d = yaml.safe_load(f)
         spec = Spec.from_dict(d)
-
-# Make data path relative to spec file if not absolute
         data_path = Path(spec.data)
         if not data_path.is_absolute():
             spec.data = str(resolve_data_path(Path(spec_path), data_path))
-
-
         if not spec.title:
             spec.title = derive_title_from_spec(spec_path)
 
@@ -422,7 +336,6 @@ def run(spec_path: str) -> str:
     rend = build_renderer(spec, df)
     rend.render()
 
-    # ffmpeg postprocess → 1080x1920 white vertical
     src = Path(spec.out)
     out_path = src.with_name(f"{src.stem}_vertical.mp4")
 
@@ -439,24 +352,8 @@ def run(spec_path: str) -> str:
     subprocess.run(cmd, check=True)
     print(f"📱 Vertical formatted version written to: {out_path}")
 
-    # --- Optional audio merge step (look for matching .wav in audio_out) ---
     audio_path = Path(spec.data).with_suffix(".wav").name
-    audio_file = Path("plugins/midi/audio_out") / audio_path  # adjust if your folder differs
-
-    if audio_file.exists():
-        with_audio = out_path.with_name(f"{out_path.stem}_with_audio.mp4")
-        subprocess.run([
-            "ffmpeg", "-y", "-i", str(out_path),
-            "-i", str(audio_file),
-            "-c:v", "copy", "-c:a", "aac", "-shortest", str(with_audio)
-        ], check=True)
-        print(f"🎧 Audio merged: {with_audio}")
-    else:
-        print(f"⚠️ No matching audio file found: {audio_file}")
-
-    # --- Optional audio merge step (look for matching .wav in audio_out) ---
-    audio_path = Path(spec.data).with_suffix(".wav").name
-    audio_file = Path("plugins/midi/audio_out") / audio_path  # adjust if your folder differs
+    audio_file = Path("plugins/midi/audio_out") / audio_path
 
     if audio_file.exists():
         with_audio = out_path.with_name(f"{out_path.stem}_with_audio.mp4")
@@ -471,12 +368,8 @@ def run(spec_path: str) -> str:
 
     return str(out_path)
 
-
 def main(argv=None):
     import argparse
-    from pathlib import Path
-    import sys
-
     parser = argparse.ArgumentParser(
         description="Generalized time-series → video engine (supports per-plugin specs directories)"
     )
@@ -500,14 +393,11 @@ def main(argv=None):
             print(f"✅ Using spec #{args.index}: {spec_path.name}")
         except IndexError:
             sys.exit(f"❌ Invalid index {args.index}. Only {len(specs)} specs available in {specs_dir}.")
-
     elif args.spec:
-        # allow relative path or filename relative to the given dir
         candidate = Path(args.spec)
         spec_path = candidate if candidate.exists() else specs_dir / args.spec
         if not spec_path.exists():
             sys.exit(f"❌ Spec not found: {spec_path}")
-
     else:
         specs = sorted(specs_dir.glob("*.yaml"))
         if not specs:
@@ -524,7 +414,5 @@ def main(argv=None):
 
     run(str(spec_path))
 
-
 if __name__ == "__main__":
     main()
-

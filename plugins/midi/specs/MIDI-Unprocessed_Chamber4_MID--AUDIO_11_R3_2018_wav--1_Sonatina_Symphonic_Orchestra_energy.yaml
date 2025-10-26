@@ -1,0 +1,9 @@
+chart_type: audio_waveform
+data: audio_data/MIDI-Unprocessed_Chamber4_MID--AUDIO_11_R3_2018_wav--1_Sonatina_Symphonic_Orchestra_energy.csv
+time: time
+value: rms
+title: Midi-Unprocessed Chamber4 Mid--Audio 11 R3 2018 Wav--1 Sonatina Symphonic Orchestra
+  (Energy)
+palette: Blues
+fps: 24
+out: out/MIDI-Unprocessed_Chamber4_MID--AUDIO_11_R3_2018_wav--1_Sonatina_Symphonic_Orchestra_energy.mp4

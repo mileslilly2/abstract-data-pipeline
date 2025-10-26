@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/57_soul-motown_148_fill_4-4_FluidR3 GM2-2_energy.csv
+time: time
+value: rms
+title: 57 Soul-Motown 148 Fill 4-4 Fluidr3 Gm2-2 (Energy)
+palette: Blues
+fps: 24
+out: out/57_soul-motown_148_fill_4-4_FluidR3 GM2-2_energy.mp4

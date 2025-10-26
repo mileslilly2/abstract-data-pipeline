@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/92_hiphop_70_beat_4-4_FluidR3 GM2-2_waveform.csv
+time: time
+value: amplitude
+title: 92 Hiphop 70 Beat 4-4 Fluidr3 Gm2-2 (Waveform)
+palette: Blues
+fps: 24
+out: out/92_hiphop_70_beat_4-4_FluidR3 GM2-2_waveform.mp4

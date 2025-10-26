@@ -1,0 +1,11 @@
+chart_type: audio_waveform
+data: audio_data/MIDI-Unprocessed_051_PIANO051_MID--AUDIO-split_07-06-17_Piano-e_3-02_wav--4_FluidR3
+  GM2-2_energy.csv
+time: time
+value: rms
+title: Midi-Unprocessed 051 Piano051 Mid--Audio-Split 07-06-17 Piano-E 3-02 Wav--4
+  Fluidr3 Gm2-2 (Energy)
+palette: Blues
+fps: 24
+out: out/MIDI-Unprocessed_051_PIANO051_MID--AUDIO-split_07-06-17_Piano-e_3-02_wav--4_FluidR3
+  GM2-2_energy.mp4

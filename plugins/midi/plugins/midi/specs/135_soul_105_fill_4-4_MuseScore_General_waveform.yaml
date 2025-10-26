@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: plugins/midi/audio_data/135_soul_105_fill_4-4_MuseScore_General_waveform.csv
+time: time
+value: amplitude
+title: 135 Soul 105 Fill 4-4 Musescore General (Waveform)
+palette: Blues
+fps: 24
+out: out/135_soul_105_fill_4-4_MuseScore_General_waveform.mp4

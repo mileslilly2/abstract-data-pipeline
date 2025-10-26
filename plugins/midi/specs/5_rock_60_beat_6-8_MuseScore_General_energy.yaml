@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/5_rock_60_beat_6-8_MuseScore_General_energy.csv
+time: time
+value: rms
+title: 5 Rock 60 Beat 6-8 Musescore General (Energy)
+palette: Blues
+fps: 24
+out: out/5_rock_60_beat_6-8_MuseScore_General_energy.mp4

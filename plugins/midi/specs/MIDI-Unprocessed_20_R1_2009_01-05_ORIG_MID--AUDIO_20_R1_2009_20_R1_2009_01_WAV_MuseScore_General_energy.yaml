@@ -1,0 +1,9 @@
+chart_type: audio_waveform
+data: audio_data/MIDI-Unprocessed_20_R1_2009_01-05_ORIG_MID--AUDIO_20_R1_2009_20_R1_2009_01_WAV_MuseScore_General_energy.csv
+time: time
+value: rms
+title: Midi-Unprocessed 20 R1 2009 01-05 Orig Mid--Audio 20 R1 2009 20 R1 2009 01
+  Wav Musescore General (Energy)
+palette: Blues
+fps: 24
+out: out/MIDI-Unprocessed_20_R1_2009_01-05_ORIG_MID--AUDIO_20_R1_2009_20_R1_2009_01_WAV_MuseScore_General_energy.mp4

@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/4_soul-groove4_80_beat_4-4_FluidR3 GM2-2_energy.csv
+time: time
+value: rms
+title: 4 Soul-Groove4 80 Beat 4-4 Fluidr3 Gm2-2 (Energy)
+palette: Blues
+fps: 24
+out: out/4_soul-groove4_80_beat_4-4_FluidR3 GM2-2_energy.mp4

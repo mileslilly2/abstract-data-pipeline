@@ -1,0 +1,9 @@
+chart_type: audio_waveform
+data: audio_data/MIDI-Unprocessed_22_R2_2011_MID--AUDIO_R2-D5_10_Track10_wav_FluidR3
+  GM2-2_energy.csv
+time: time
+value: rms
+title: Midi-Unprocessed 22 R2 2011 Mid--Audio R2-D5 10 Track10 Wav Fluidr3 Gm2-2 (Energy)
+palette: Blues
+fps: 24
+out: out/MIDI-Unprocessed_22_R2_2011_MID--AUDIO_R2-D5_10_Track10_wav_FluidR3 GM2-2_energy.mp4
