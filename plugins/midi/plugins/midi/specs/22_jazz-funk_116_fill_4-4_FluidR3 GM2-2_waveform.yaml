@@ -1,8 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/22_jazz-funk_116_fill_4-4_FluidR3 GM2-2_waveform.csv
-time: time
-value: amplitude
-title: 22 Jazz-Funk 116 Fill 4-4 Fluidr3 Gm2-2 (Waveform)
-palette: Blues
-fps: 24
-out: out/22_jazz-funk_116_fill_4-4_FluidR3 GM2-2_waveform.mp4

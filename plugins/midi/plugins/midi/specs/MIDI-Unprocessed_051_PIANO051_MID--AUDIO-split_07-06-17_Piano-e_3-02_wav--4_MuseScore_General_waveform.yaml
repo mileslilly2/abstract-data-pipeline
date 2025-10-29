@@ -1,9 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/MIDI-Unprocessed_051_PIANO051_MID--AUDIO-split_07-06-17_Piano-e_3-02_wav--4_MuseScore_General_waveform.csv
-time: time
-value: amplitude
-title: Midi-Unprocessed 051 Piano051 Mid--Audio-Split 07-06-17 Piano-E 3-02 Wav--4
-  Musescore General (Waveform)
-palette: Blues
-fps: 24
-out: out/MIDI-Unprocessed_051_PIANO051_MID--AUDIO-split_07-06-17_Piano-e_3-02_wav--4_MuseScore_General_waveform.mp4

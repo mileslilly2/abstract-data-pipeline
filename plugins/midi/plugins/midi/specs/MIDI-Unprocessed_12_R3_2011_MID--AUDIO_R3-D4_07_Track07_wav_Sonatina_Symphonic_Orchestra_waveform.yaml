@@ -1,9 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/MIDI-Unprocessed_12_R3_2011_MID--AUDIO_R3-D4_07_Track07_wav_Sonatina_Symphonic_Orchestra_waveform.csv
-time: time
-value: amplitude
-title: Midi-Unprocessed 12 R3 2011 Mid--Audio R3-D4 07 Track07 Wav Sonatina Symphonic
-  Orchestra (Waveform)
-palette: Blues
-fps: 24
-out: out/MIDI-Unprocessed_12_R3_2011_MID--AUDIO_R3-D4_07_Track07_wav_Sonatina_Symphonic_Orchestra_waveform.mp4

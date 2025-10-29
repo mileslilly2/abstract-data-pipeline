@@ -1,8 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/140_funk-fast_125_fill_4-4_Sonatina_Symphonic_Orchestra_waveform.csv
-time: time
-value: amplitude
-title: 140 Funk-Fast 125 Fill 4-4 Sonatina Symphonic Orchestra (Waveform)
-palette: Blues
-fps: 24
-out: out/140_funk-fast_125_fill_4-4_Sonatina_Symphonic_Orchestra_waveform.mp4

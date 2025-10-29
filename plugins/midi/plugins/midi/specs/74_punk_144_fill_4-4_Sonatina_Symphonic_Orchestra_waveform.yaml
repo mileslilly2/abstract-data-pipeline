@@ -1,8 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/74_punk_144_fill_4-4_Sonatina_Symphonic_Orchestra_waveform.csv
-time: time
-value: amplitude
-title: 74 Punk 144 Fill 4-4 Sonatina Symphonic Orchestra (Waveform)
-palette: Blues
-fps: 24
-out: out/74_punk_144_fill_4-4_Sonatina_Symphonic_Orchestra_waveform.mp4
