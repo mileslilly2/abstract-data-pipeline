@@ -1,0 +1,13 @@
+chart_type: audio_spectrogram
+data: 129_afrocuban-bembe_122_fill_4-4_audio_spectrogram.csv
+time: time
+value: intensity
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/129_afrocuban-bembe_122_fill_4-4_audio_spectrogram.mp4
+title: "129 Afrocuban-Bembe 122 Fill 4-4 \u2014 Spectrogram"
+legend: false
+hold_frames: 1

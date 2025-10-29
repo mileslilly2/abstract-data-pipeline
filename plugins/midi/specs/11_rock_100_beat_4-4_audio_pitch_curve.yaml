@@ -1,0 +1,13 @@
+chart_type: audio_pitch_curve
+data: 11_rock_100_beat_4-4_audio_pitch_curve.csv
+time: time
+value: frequency
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/11_rock_100_beat_4-4_audio_pitch_curve.mp4
+title: "11 Rock 100 Beat 4-4 \u2014 Pitch_Curve"
+legend: false
+hold_frames: 1

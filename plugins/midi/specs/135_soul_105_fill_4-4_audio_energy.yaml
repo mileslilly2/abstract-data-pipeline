@@ -1,0 +1,13 @@
+chart_type: audio_energy
+data: 135_soul_105_fill_4-4_audio_energy.csv
+time: time
+value: rms
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/135_soul_105_fill_4-4_audio_energy.mp4
+title: "135 Soul 105 Fill 4-4 \u2014 Energy"
+legend: false
+hold_frames: 1
