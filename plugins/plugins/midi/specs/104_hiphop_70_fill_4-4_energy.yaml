@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: /home/miles/Documents/abstract-data-pipeline/plugins/plugins/midi/audio_data/104_hiphop_70_fill_4-4_energy.csv
+time: time
+value: rms
+title: 104 Hiphop 70 Fill 4-4 (Energy)
+palette: Blues
+fps: 24
+out: out/104_hiphop_70_fill_4-4_energy.mp4

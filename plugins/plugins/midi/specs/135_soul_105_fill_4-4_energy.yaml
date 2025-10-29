@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: /home/miles/Documents/abstract-data-pipeline/plugins/plugins/midi/audio_data/135_soul_105_fill_4-4_energy.csv
+time: time
+value: rms
+title: 135 Soul 105 Fill 4-4 (Energy)
+palette: Blues
+fps: 24
+out: out/135_soul_105_fill_4-4_energy.mp4

@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: /home/miles/Documents/abstract-data-pipeline/plugins/plugins/midi/audio_data/109_rock_95_beat_4-4_waveform.csv
+time: time
+value: amplitude
+title: 109 Rock 95 Beat 4-4 (Waveform)
+palette: Blues
+fps: 24
+out: out/109_rock_95_beat_4-4_waveform.mp4
