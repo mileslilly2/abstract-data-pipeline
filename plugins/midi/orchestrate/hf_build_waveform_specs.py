@@ -22,6 +22,14 @@ SPEC_DIR.mkdir(parents=True, exist_ok=True)
 
 def log(msg): 
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+    
+def upload_all():
+    log(f"⬆️ Uploading generated CSVs + YAML specs to {HF_REPO_OUT} …")
+    # Upload both directories: specs and audio_data
+    upload_folder(repo_id=HF_REPO_OUT, folder_path=str(SPEC_DIR), repo_type="dataset")
+    upload_folder(repo_id=HF_REPO_OUT, folder_path=str(PROJECT_ROOT / "plugins/midi/audio_data"), repo_type="dataset")
+    log(f"✅ Upload complete → https://huggingface.co/datasets/{HF_REPO_OUT}")
+
 
 def main(limit: int = 10):
     if not GEN_SPEC.exists():
@@ -91,10 +99,7 @@ def main(limit: int = 10):
     for f in csvs + yamls:
         shutil.copy(f, combined_dir / f.name)
 
-    log(f"⬆️ Uploading {len(list(combined_dir.glob('*')))} paired files to Hugging Face …")
-    upload_folder(repo_id=HF_REPO_OUT, folder_path=str(combined_dir), repo_type="dataset")
-
-    log(f"✅ Upload complete → https://huggingface.co/datasets/{HF_REPO_OUT}")
-
+ 
+   
 if __name__ == "__main__":
     main(limit=10)
