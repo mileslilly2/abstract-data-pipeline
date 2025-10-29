@@ -1,0 +1,13 @@
+chart_type: audio_tempo
+data: 104_hiphop_70_fill_4-4_audio_tempo.csv
+time: time
+value: tempo
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/104_hiphop_70_fill_4-4_audio_tempo.mp4
+title: "104 Hiphop 70 Fill 4-4 \u2014 Tempo"
+legend: false
+hold_frames: 1

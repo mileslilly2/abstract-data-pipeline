@@ -257,7 +257,57 @@ class LineRenderer(BaseRenderer):
         finally:
             writer.close()
 
-class AudioWaveRenderer(BaseRenderer):
+class AudioSpectrogramRenderer(BaseRenderer):
+    def render(self):
+        sp = self.spec
+        writer = self.writer()
+        pivot = self.df.pivot(index="frequency", columns="time", values="intensity")
+        import matplotlib.cm as cm
+        cmap = cm.get_cmap("magma")
+        for i in range(pivot.shape[1]):
+            fig = make_figure(sp.width, sp.height, sp.dpi)
+            ax = fig.add_subplot(111)
+            ax.imshow(pivot.iloc[:, :i], aspect="auto", origin="lower", cmap=cmap)
+            ax.axis("off")
+            fig.suptitle(sp.title, fontsize=26, weight="bold", y=0.96)
+            nd = fig_to_ndarray(fig)
+            plt.close(fig)
+            for _ in range(sp.hold_frames):
+                writer.append_data(nd)
+        writer.close()
+
+class AudioBeatsRenderer(BaseRenderer):
+    def render(self):
+        sp = self.spec
+        writer = self.writer()
+        for i, row in enumerate(self.df.itertuples()):
+            fig = make_figure(sp.width, sp.height, sp.dpi)
+            ax = fig.add_subplot(111)
+            ax.bar(self.df["time"][:i], self.df["onset_strength"][:i], color="orange")
+            ax.axis("off")
+            fig.suptitle(sp.title, fontsize=26, weight="bold", y=0.96)
+            nd = fig_to_ndarray(fig)
+            plt.close(fig)
+            for _ in range(sp.hold_frames):
+                writer.append_data(nd)
+        writer.close()
+
+class AudioPitchCurveRenderer(BaseRenderer):
+    def render(self):
+        sp = self.spec
+        writer = self.writer()
+        for i in range(len(self.df)):
+            fig = make_figure(sp.width, sp.height, sp.dpi)
+            ax = fig.add_subplot(111)
+            ax.plot(self.df["time"][:i], self.df["frequency"][:i], color="purple")
+            ax.axis("off")
+            fig.suptitle(sp.title, fontsize=26, weight="bold", y=0.96)
+            nd = fig_to_ndarray(fig)
+            plt.close(fig)
+            for _ in range(sp.hold_frames):
+                writer.append_data(nd)
+        writer.close()
+
     def render(self):
         sp = self.spec
         writer = self.writer()
@@ -315,9 +365,14 @@ def build_renderer(spec: Spec, df: pd.DataFrame):
     if chart == "choropleth":
         return ChoroplethRenderer(spec, df)
     elif chart == "line":
-        return AudioWaveRenderer(spec, df)
-    elif chart == "audio_waveform":
-        return AudioWaveRenderer(spec, df)
+        return Line(spec, df)
+    elif chart == "audio_spectrogram":
+        return AudioSpectrogramRenderer(spec, df)
+    elif chart == "audio_beats":
+        return AudioBeatsRenderer(spec, df)
+    elif chart == "audio_pitch_curve":
+        return AudioPitchCurveRenderer(spec, df)
+
     else:
         raise ValueError(f"Unsupported chart_type: {spec.chart_type}")
 

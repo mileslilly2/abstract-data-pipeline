@@ -1,9 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/MIDI-Unprocessed_22_R2_2011_MID--AUDIO_R2-D5_10_Track10_wav_MuseScore_General_waveform.csv
-time: time
-value: amplitude
-title: Midi-Unprocessed 22 R2 2011 Mid--Audio R2-D5 10 Track10 Wav Musescore General
-  (Waveform)
-palette: Blues
-fps: 24
-out: out/MIDI-Unprocessed_22_R2_2011_MID--AUDIO_R2-D5_10_Track10_wav_MuseScore_General_waveform.mp4

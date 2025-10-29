@@ -1,0 +1,13 @@
+chart_type: audio_tempo
+data: 109_rock_95_beat_4-4_audio_tempo.csv
+time: time
+value: tempo
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/109_rock_95_beat_4-4_audio_tempo.mp4
+title: "109 Rock 95 Beat 4-4 \u2014 Tempo"
+legend: false
+hold_frames: 1

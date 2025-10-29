@@ -1,9 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/MIDI-Unprocessed_Chamber4_MID--AUDIO_11_R3_2018_wav--1_FluidR3
-  GM2-2_waveform.csv
-time: time
-value: amplitude
-title: Midi-Unprocessed Chamber4 Mid--Audio 11 R3 2018 Wav--1 Fluidr3 Gm2-2 (Waveform)
-palette: Blues
-fps: 24
-out: out/MIDI-Unprocessed_Chamber4_MID--AUDIO_11_R3_2018_wav--1_FluidR3 GM2-2_waveform.mp4

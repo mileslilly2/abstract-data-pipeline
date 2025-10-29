@@ -1,0 +1,13 @@
+chart_type: audio_tempo
+data: 125_funk_95_fill_4-4_audio_tempo.csv
+time: time
+value: tempo
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/125_funk_95_fill_4-4_audio_tempo.mp4
+title: "125 Funk 95 Fill 4-4 \u2014 Tempo"
+legend: false
+hold_frames: 1

@@ -1,78 +1,53 @@
 #!/usr/bin/env python3
 # generate_audio_specs.py
-# Convert .wav files (local or HF dataset) → CSV + YAML specs for viz2video.py
-# Supports waveform, energy, spectrogram, beats, tempo, and pitch modes.
+# Convert .wav → CSV + YAML specs for viz2video.py (multi-chart)
+# ✅ Fixed: Always writes to correct directories regardless of cwd.
 
-import argparse, os, sys, time, json, librosa, librosa.display, numpy as np, pandas as pd, yaml
+import argparse, sys, time, librosa, numpy as np, pandas as pd, yaml, soundfile as sf
 from pathlib import Path
 from datasets import load_dataset
 
-# ─────────────────────────── CONFIG ─────────────────────────────
-SR = 22050  # target sample rate for analysis
-MAX_SAMPLES = 5  # limit for HF streaming mode
-AUDIO_DIR = Path("plugins/midi/audio_data")
-SPEC_DIR = Path("plugins/midi/specs")
+# ───────────────────────── CONFIG ─────────────────────────
+PROJECT_ROOT = Path(__file__).resolve().parents[3]  # go up to abstract-data-pipeline
+AUDIO_DIR = PROJECT_ROOT / "plugins/midi/audio_data"
+SPEC_DIR  = PROJECT_ROOT / "plugins/midi/specs"
 AUDIO_DIR.mkdir(exist_ok=True, parents=True)
 SPEC_DIR.mkdir(exist_ok=True, parents=True)
+SR = 22050
 
 def log(msg): print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
-# ─────────────────────────── HELPERS ────────────────────────────
-def load_audio(path_or_bytes):
-    """Load a WAV file from path or bytes → mono, resampled"""
-    if isinstance(path_or_bytes, (str, Path)):
-        y, sr = librosa.load(path_or_bytes, sr=SR, mono=True)
-    else:
-        import io, soundfile as sf
-        y, sr = sf.read(io.BytesIO(path_or_bytes))
-        if len(y.shape) > 1: y = np.mean(y, axis=1)
-        if sr != SR: y = librosa.resample(y, orig_sr=sr, target_sr=SR)
-    return y, SR
+# ───────────────────────── HELPERS ─────────────────────────
+def load_audio(path: Path):
+    y, sr = librosa.load(path, sr=SR, mono=True)
+    return y, sr
 
 def write_csv(df: pd.DataFrame, path: Path):
-    path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(path, index=False)
     log(f"💾 Wrote CSV → {path}")
 
-def write_spec(csv_path: Path, mode: str, title: str):
-    """Generate YAML spec for viz2video.py (now supports audio_waveform renderer)."""
-
-    # Select the right renderer
-    if mode in ["waveform", "energy", "pitch", "tempo"]:
-        chart_type = "audio_waveform"
-    elif mode == "spectrogram":
-        chart_type = "audio_spectrogram"  # placeholder for later spectrogram renderer
-    else:
-        chart_type = "choropleth"  # fallback
-
-    # Select value field based on mode
-    value_map = {
-        "waveform": "amplitude",
-        "energy": "rms",
-        "spectrogram": "intensity",
-        "beats": "onset_strength",
-        "tempo": "tempo",
-        "pitch": "frequency"
-    }
-
+def write_spec(csv_path: Path, chart_type: str, value_col: str, title: str):
     spec = {
         "chart_type": chart_type,
-        "data": str(csv_path),
+        "data": csv_path.name,
         "time": "time",
-        "value": value_map.get(mode, "value"),
-        "title": title,
-        "palette": "Blues" if mode in ["waveform", "energy"] else "Reds",
+        "value": value_col,
+        "width": 1080,
+        "height": 1920,
+        "dpi": 150,
         "fps": 24,
-        "out": f"out/{csv_path.stem}.mp4"
+        "bitrate": "8M",
+        "out": f"videos/{csv_path.stem}.mp4",
+        "title": title,
+        "legend": False,
+        "hold_frames": 1,
     }
-
-    out_yaml = SPEC_DIR / f"{csv_path.stem}.yaml"
-    out_yaml.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_yaml, "w", encoding="utf-8") as f:
+    yaml_path = SPEC_DIR / f"{csv_path.stem}.yaml"
+    with open(yaml_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(spec, f, sort_keys=False)
-    log(f"🧾 Spec written → {out_yaml}")
+    log(f"🧾 Spec written → {yaml_path}")
 
-# ─────────────────────────── COMPUTATIONS ─────────────────────────
+# ───────────────────────── FEATURES ─────────────────────────
 def compute_waveform(y, sr):
     t = np.arange(len(y)) / sr
     return pd.DataFrame({"time": t, "amplitude": y})
@@ -86,10 +61,7 @@ def compute_spectrogram(y, sr, hop=512, n_fft=1024):
     S = librosa.amplitude_to_db(np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop)), ref=np.max)
     freqs = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
     times = librosa.frames_to_time(np.arange(S.shape[1]), sr=sr, hop_length=hop)
-    rows = []
-    for i, f in enumerate(freqs):
-        for j, t in enumerate(times):
-            rows.append({"time": t, "frequency": f, "intensity": S[i, j]})
+    rows = [{"time": t, "frequency": f, "intensity": S[i, j]} for i, f in enumerate(freqs) for j, t in enumerate(times)]
     return pd.DataFrame(rows)
 
 def compute_beats(y, sr):
@@ -98,75 +70,61 @@ def compute_beats(y, sr):
     times = librosa.frames_to_time(beats, sr=sr)
     return pd.DataFrame({"time": times, "onset_strength": onset_env[:len(times)]})
 
+def compute_pitch(y, sr):
+    f0 = librosa.yin(y, fmin=50, fmax=2000, sr=sr)
+    t = librosa.frames_to_time(np.arange(len(f0)), sr=sr)
+    return pd.DataFrame({"time": t, "frequency": f0})
+
 def compute_tempo(y, sr):
     oenv = librosa.onset.onset_strength(y=y, sr=sr)
     tempos = librosa.beat.tempo(onset_envelope=oenv, sr=sr, aggregate=None)
     times = librosa.frames_to_time(np.arange(len(tempos)), sr=sr)
     return pd.DataFrame({"time": times, "tempo": tempos})
 
-def compute_pitch(y, sr, frame_length=2048, hop_length=256):
-    f0 = librosa.yin(y, fmin=50, fmax=2000, sr=sr, frame_length=frame_length, hop_length=hop_length)
-    t = librosa.frames_to_time(np.arange(len(f0)), sr=sr, hop_length=hop_length)
-    return pd.DataFrame({"time": t, "frequency": f0})
-
-# ─────────────────────────── PIPELINE ─────────────────────────────
-def process_audio(path: Path, modes: list[str]):
+# ───────────────────────── PIPELINE ─────────────────────────
+def process_audio(path: Path):
     y, sr = load_audio(path)
     base = path.stem
-    for mode in modes:
-        log(f"🎨 Processing {base} in mode={mode}")
-        if mode == "waveform":
-            df = compute_waveform(y, sr)
-        elif mode == "energy":
-            df = compute_energy(y, sr)
-        elif mode == "spectrogram":
-            df = compute_spectrogram(y, sr)
-        elif mode == "beats":
-            df = compute_beats(y, sr)
-        elif mode == "tempo":
-            df = compute_tempo(y, sr)
-        elif mode == "pitch":
-            df = compute_pitch(y, sr)
-        else:
-            log(f"⚠️ Unknown mode: {mode}")
-            continue
 
-        csv_path = AUDIO_DIR / f"{base}_{mode}.csv"
-        write_csv(df, csv_path)
-        write_spec(csv_path, mode, f"{base.replace('_', ' ').title()} ({mode.title()})")
+    modes = {
+        "audio_waveform": (compute_waveform, "amplitude"),
+        "audio_energy": (compute_energy, "rms"),
+        "audio_spectrogram": (compute_spectrogram, "intensity"),
+        "audio_beats": (compute_beats, "onset_strength"),
+        "audio_pitch_curve": (compute_pitch, "frequency"),
+        "audio_tempo": (compute_tempo, "tempo"),
+    }
 
-# ─────────────────────────── MAIN ─────────────────────────────
+    for chart_type, (func, value_col) in modes.items():
+        try:
+            df = func(y, sr)
+            csv_path = AUDIO_DIR / f"{base}_{chart_type}.csv"
+            write_csv(df, csv_path)
+            title = f"{base.replace('_', ' ').title()} — {chart_type.replace('audio_', '').title()}"
+            write_spec(csv_path, chart_type, value_col, title)
+        except Exception as e:
+            log(f"⚠️ Failed {chart_type} for {base}: {e}")
+
+# ───────────────────────── MAIN ─────────────────────────
 def main():
-    ap = argparse.ArgumentParser(description="Generate CSV+specs for viz2video from audio.")
-    ap.add_argument("--dataset", help="Hugging Face dataset or local folder with .wav files", required=False)
-    ap.add_argument("--modes", nargs="+", default=["waveform"], help="Modes to generate (waveform, energy, spectrogram, beats, tempo, pitch)")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dataset", help="Folder or HF dataset with .wav", required=True)
     ap.add_argument("--limit", type=int, default=5)
     args = ap.parse_args()
 
-    if args.dataset and args.dataset.endswith(".wav"):
-        paths = [Path(args.dataset)]
-    elif args.dataset and Path(args.dataset).exists():
+    if Path(args.dataset).is_dir():
         paths = list(Path(args.dataset).glob("*.wav"))
-    elif args.dataset:
-        log(f"🎧 Loading from HF dataset: {args.dataset}")
-        ds = load_dataset(args.dataset, split="train", streaming=True)
-        paths = []
-        for i, row in enumerate(ds):
-            if i >= args.limit: break
-            tmp = Path(f"tmp_{i}.wav")
-            tmp.write_bytes(row["audio"]["bytes"] if "audio" in row else row["file"].read())
-            paths.append(tmp)
     else:
-        paths = list(Path("audio_out").glob("*.wav"))
+        paths = [Path(args.dataset)]
 
     if not paths:
         log("❌ No audio files found.")
         sys.exit(1)
 
-    for path in paths:
-        process_audio(path, args.modes)
+    for p in paths[:args.limit]:
+        process_audio(p)
 
-    log("✅ Done! Specs ready for viz2video.py.")
+    log("✅ Done! Specs + CSVs ready for viz2video.py")
 
 if __name__ == "__main__":
     main()

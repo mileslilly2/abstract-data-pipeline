@@ -1,8 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/10_soul-groove10_102_beat_4-4_FluidR3 GM2-2_waveform.csv
-time: time
-value: amplitude
-title: 10 Soul-Groove10 102 Beat 4-4 Fluidr3 Gm2-2 (Waveform)
-palette: Blues
-fps: 24
-out: out/10_soul-groove10_102_beat_4-4_FluidR3 GM2-2_waveform.mp4

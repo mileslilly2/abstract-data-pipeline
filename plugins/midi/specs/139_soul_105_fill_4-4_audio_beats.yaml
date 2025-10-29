@@ -1,0 +1,13 @@
+chart_type: audio_beats
+data: 139_soul_105_fill_4-4_audio_beats.csv
+time: time
+value: onset_strength
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: 8M
+out: videos/139_soul_105_fill_4-4_audio_beats.mp4
+title: "139 Soul 105 Fill 4-4 \u2014 Beats"
+legend: false
+hold_frames: 1

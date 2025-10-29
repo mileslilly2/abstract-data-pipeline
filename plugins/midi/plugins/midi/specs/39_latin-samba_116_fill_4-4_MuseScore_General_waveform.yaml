@@ -1,8 +1,0 @@
-chart_type: audio_waveform
-data: plugins/midi/audio_data/39_latin-samba_116_fill_4-4_MuseScore_General_waveform.csv
-time: time
-value: amplitude
-title: 39 Latin-Samba 116 Fill 4-4 Musescore General (Waveform)
-palette: Blues
-fps: 24
-out: out/39_latin-samba_116_fill_4-4_MuseScore_General_waveform.mp4
