@@ -1,9 +1,0 @@
-chart_type: choropleth
-data: audio_data/MIDI-Unprocessed_R2_D2-19-21-22_mid--AUDIO-from_mp3_22_R2_2015_wav--1_MuseScore_General_beats.csv
-time: time
-value: onset_strength
-title: Midi-Unprocessed R2 D2-19-21-22 Mid--Audio-From Mp3 22 R2 2015 Wav--1 Musescore
-  General (Beats)
-palette: Reds
-fps: 24
-out: out/MIDI-Unprocessed_R2_D2-19-21-22_mid--AUDIO-from_mp3_22_R2_2015_wav--1_MuseScore_General_beats.mp4

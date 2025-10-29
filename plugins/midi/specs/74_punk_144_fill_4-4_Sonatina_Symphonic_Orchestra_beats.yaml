@@ -1,8 +1,0 @@
-chart_type: choropleth
-data: audio_data/74_punk_144_fill_4-4_Sonatina_Symphonic_Orchestra_beats.csv
-time: time
-value: onset_strength
-title: 74 Punk 144 Fill 4-4 Sonatina Symphonic Orchestra (Beats)
-palette: Reds
-fps: 24
-out: out/74_punk_144_fill_4-4_Sonatina_Symphonic_Orchestra_beats.mp4

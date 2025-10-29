@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/92_hiphop_70_beat_4-4_MuseScore_General_energy.csv
+time: time
+value: rms
+title: 92 Hiphop 70 Beat 4-4 Musescore General (Energy)
+palette: Blues
+fps: 24
+out: out/92_hiphop_70_beat_4-4_MuseScore_General_energy.mp4

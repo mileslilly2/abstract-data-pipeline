@@ -1,8 +1,8 @@
-chart_type: line
+chart_type: audio_waveform
 data: audio_data/60_funk_112_fill_4-4_FluidR3 GM2-2_energy.csv
 time: time
 value: rms
 title: 60 Funk 112 Fill 4-4 Fluidr3 Gm2-2 (Energy)
-palette: Reds
+palette: Blues
 fps: 24
 out: out/60_funk_112_fill_4-4_FluidR3 GM2-2_energy.mp4

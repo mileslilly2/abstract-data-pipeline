@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/MIDI-Unprocessed_Schubert1-3_MID--AUDIO_02_R2_2018_wav_MuseScore_General_waveform.csv
+time: time
+value: amplitude
+title: Midi-Unprocessed Schubert1-3 Mid--Audio 02 R2 2018 Wav Musescore General (Waveform)
+palette: Blues
+fps: 24
+out: out/MIDI-Unprocessed_Schubert1-3_MID--AUDIO_02_R2_2018_wav_MuseScore_General_waveform.mp4

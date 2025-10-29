@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/11_rock_100_beat_4-4_FluidR3 GM2-2_waveform.csv
+time: time
+value: amplitude
+title: 11 Rock 100 Beat 4-4 Fluidr3 Gm2-2 (Waveform)
+palette: Blues
+fps: 24
+out: out/11_rock_100_beat_4-4_FluidR3 GM2-2_waveform.mp4

@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/140_funk-fast_125_fill_4-4_MuseScore_General_energy.csv
+time: time
+value: rms
+title: 140 Funk-Fast 125 Fill 4-4 Musescore General (Energy)
+palette: Blues
+fps: 24
+out: out/140_funk-fast_125_fill_4-4_MuseScore_General_energy.mp4

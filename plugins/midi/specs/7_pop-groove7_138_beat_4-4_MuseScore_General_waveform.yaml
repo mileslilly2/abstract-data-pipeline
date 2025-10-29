@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/7_pop-groove7_138_beat_4-4_MuseScore_General_waveform.csv
+time: time
+value: amplitude
+title: 7 Pop-Groove7 138 Beat 4-4 Musescore General (Waveform)
+palette: Blues
+fps: 24
+out: out/7_pop-groove7_138_beat_4-4_MuseScore_General_waveform.mp4

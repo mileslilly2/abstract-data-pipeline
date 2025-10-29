@@ -1,4 +1,4 @@
-chart_type: line
+chart_type: audio_waveform
 data: audio_data/5_rock_60_beat_6-8_FluidR3 GM2-2_waveform.csv
 time: time
 value: amplitude

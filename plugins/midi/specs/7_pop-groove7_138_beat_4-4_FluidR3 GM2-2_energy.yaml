@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/7_pop-groove7_138_beat_4-4_FluidR3 GM2-2_energy.csv
+time: time
+value: rms
+title: 7 Pop-Groove7 138 Beat 4-4 Fluidr3 Gm2-2 (Energy)
+palette: Blues
+fps: 24
+out: out/7_pop-groove7_138_beat_4-4_FluidR3 GM2-2_energy.mp4

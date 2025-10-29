@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: plugins/midi/audio_data/11_rock_100_beat_4-4_MuseScore_General_waveform.csv
+time: time
+value: amplitude
+title: 11 Rock 100 Beat 4-4 Musescore General (Waveform)
+palette: Blues
+fps: 24
+out: out/11_rock_100_beat_4-4_MuseScore_General_waveform.mp4

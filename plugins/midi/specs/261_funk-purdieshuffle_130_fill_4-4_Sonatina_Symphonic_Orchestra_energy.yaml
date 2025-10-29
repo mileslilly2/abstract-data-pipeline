@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/261_funk-purdieshuffle_130_fill_4-4_Sonatina_Symphonic_Orchestra_energy.csv
+time: time
+value: rms
+title: 261 Funk-Purdieshuffle 130 Fill 4-4 Sonatina Symphonic Orchestra (Energy)
+palette: Blues
+fps: 24
+out: out/261_funk-purdieshuffle_130_fill_4-4_Sonatina_Symphonic_Orchestra_energy.mp4

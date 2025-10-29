@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/11_rock_100_beat_4-4_MuseScore_General_energy.csv
+time: time
+value: rms
+title: 11 Rock 100 Beat 4-4 Musescore General (Energy)
+palette: Blues
+fps: 24
+out: out/11_rock_100_beat_4-4_MuseScore_General_energy.mp4

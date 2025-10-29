@@ -1,9 +1,0 @@
-chart_type: choropleth
-data: audio_data/MIDI-Unprocessed_12_R3_2011_MID--AUDIO_R3-D4_07_Track07_wav_FluidR3
-  GM2-2_spectrogram.csv
-time: time
-value: intensity
-title: Midi-Unprocessed 12 R3 2011 Mid--Audio R3-D4 07 Track07 Wav Fluidr3 Gm2-2 (Spectrogram)
-palette: Reds
-fps: 24
-out: out/MIDI-Unprocessed_12_R3_2011_MID--AUDIO_R3-D4_07_Track07_wav_FluidR3 GM2-2_spectrogram.mp4

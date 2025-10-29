@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/7_rock_130_beat_4-4_MuseScore_General_waveform.csv
+time: time
+value: amplitude
+title: 7 Rock 130 Beat 4-4 Musescore General (Waveform)
+palette: Blues
+fps: 24
+out: out/7_rock_130_beat_4-4_MuseScore_General_waveform.mp4

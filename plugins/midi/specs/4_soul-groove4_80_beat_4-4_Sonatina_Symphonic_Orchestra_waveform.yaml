@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: audio_data/4_soul-groove4_80_beat_4-4_Sonatina_Symphonic_Orchestra_waveform.csv
+time: time
+value: amplitude
+title: 4 Soul-Groove4 80 Beat 4-4 Sonatina Symphonic Orchestra (Waveform)
+palette: Blues
+fps: 24
+out: out/4_soul-groove4_80_beat_4-4_Sonatina_Symphonic_Orchestra_waveform.mp4
