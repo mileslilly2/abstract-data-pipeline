@@ -1,0 +1,112 @@
+stage: manifest_audio
+description: >-
+  Defines the canonical dataset schema and metadata manifest
+  for the ADP audio-to-visualization pipeline.
+  Ensures all generated CSVs, YAML specs, and audio files
+  conform to a consistent structure and metadata standard.
+schema_version: "1.0.0"
+inputs:
+  - path: "plugins/midi/audio_in/"
+    type: "audio/wav"
+  - path: "plugins/midi/audio_data/"
+    type: "table/csv"
+  - path: "plugins/midi/specs/"
+    type: "text/yaml"
+outputs:
+  - path: "plugins/midi/dataset_package/manifest.jsonl"
+    type: "application/jsonlines"
+    description: "Validated manifest listing all assets and metadata per track."
+metadata_fields:
+  - name: "track_id"
+    type: "string"
+    description: "Unique identifier for the track (stem of .wav filename)."
+  - name: "duration_seconds"
+    type: "float"
+    description: "Duration of the audio file in seconds."
+  - name: "sample_rate"
+    type: "int"
+    description: "Audio sampling rate (Hz)."
+  - name: "num_channels"
+    type: "int"
+    description: "Number of channels (1 for mono, 2 for stereo)."
+  - name: "file_size_mb"
+    type: "float"
+    description: "Approximate WAV file size in megabytes."
+  - name: "feature_csvs"
+    type: "list"
+    description: "List of generated CSV filenames for this track."
+  - name: "spec_yamls"
+    type: "list"
+    description: "List of visualization spec YAML filenames for this track."
+  - name: "uploaded_to"
+    type: "string"
+    description: "Target Hugging Face dataset or local sink location."
+  - name: "render_status"
+    type: "string"
+    allowed_values: ["pending", "rendered", "failed"]
+    description: "Tracks whether viz2video has successfully produced a video."
+csv_schemas:
+  audio_waveform:
+    required_columns: ["time", "amplitude"]
+    dtypes:
+      time: float
+      amplitude: float
+  audio_energy:
+    required_columns: ["time", "rms"]
+    dtypes:
+      time: float
+      rms: float
+  audio_spectrogram:
+    required_columns: ["time", "frequency", "intensity"]
+    dtypes:
+      time: float
+      frequency: float
+      intensity: float
+  audio_beats:
+    required_columns: ["time", "onset_strength"]
+    dtypes:
+      time: float
+      onset_strength: float
+  audio_pitch_curve:
+    required_columns: ["time", "frequency"]
+    dtypes:
+      time: float
+      frequency: float
+  audio_tempo:
+    required_columns: ["time", "tempo"]
+    dtypes:
+      time: float
+      tempo: float
+yaml_spec_schema:
+  required_keys:
+    - chart_type
+    - data
+    - time
+    - value
+    - width
+    - height
+    - out
+    - title
+  optional_keys:
+    - fps
+    - bitrate
+    - legend
+    - hold_frames
+  validations:
+    chart_type:
+      allowed_prefixes: ["audio_", "line", "choropleth", "bar_race"]
+    out:
+      must_end_with: ".mp4"
+tasks:
+  - name: "ValidateCSVs"
+    action: "check_schema_compliance"
+    rules_from: "csv_schemas"
+  - name: "ValidateYAMLs"
+    action: "check_spec_keys"
+    rules_from: "yaml_spec_schema"
+  - name: "BuildManifest"
+    action: "aggregate_metadata_to_jsonl"
+    output_path: "${outputs[0].path}"
+logs:
+  - "validation_report.txt"
+  - "manifest_summary.json"
