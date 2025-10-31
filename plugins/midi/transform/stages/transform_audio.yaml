@@ -1,0 +1,43 @@
+stage: transform_audio
+description: >-
+  Transform each input .wav file into feature CSVs and paired YAML specs that
+  can be rendered by viz2video.
+
+inputs:
+  - path: plugins/midi/audio_in/
+    type: audio/wav
+
+outputs:
+  - path: plugins/midi/audio_data/
+    type: table/csv
+    pattern: "*_audio_*.csv"
+  - path: plugins/midi/specs/
+    type: text/yaml
+    pattern: "*_audio_*.yaml"
+
+params:
+  sample_rate: 22050
+  features:
+    - waveform
+    - energy
+    - spectrogram
+    - beats
+    - pitch_curve
+    - tempo
+  csv_columns:
+    waveform: [time, amplitude]
+    energy: [time, rms]
+    spectrogram: [time, frequency, intensity]
+    beats: [time, onset_strength]
+    pitch_curve: [time, frequency]
+    tempo: [time, tempo]
+
+tasks:
+  - name: ComputeAudioFeatures
+    action: plugins.midi.transform.transform_audio:extract_features_with_librosa
+    inputs_from: plugins/midi/audio_in/
+    outputs_to: plugins/midi/audio_data/
+  - name: GenerateVizSpecs
+    action: plugins.midi.transform.transform_audio:write_yaml_specs_for_viz2video
+    inputs_from: plugins/midi/audio_data/
+    outputs_to: plugins/midi/specs/
