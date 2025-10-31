@@ -13,15 +13,17 @@ dependencies = [
     "pandas",
     "geopandas",
     "pyyaml",
+    "huggingface-hub",
 ]
 
 [tool.setuptools]
-# Map logical package names to actual directories
-package-dir =
-    adp = "adp"
-    adp_plugins_disaster = "plugins/adp_plugins_disaster"
-    adp_plugins_ice = "plugins/adp_plugins_ice"
 packages = ["adp", "adp_plugins_disaster", "adp_plugins_ice"]
+
+[tool.setuptools.package-dir]
+# Map logical package names to actual directories
+adp = "adp"
+adp_plugins_disaster = "plugins/adp_plugins_disaster"
+adp_plugins_ice = "plugins/adp_plugins_ice"
 
 [project.entry-points."adp.plugins"]
 # disaster plugin
