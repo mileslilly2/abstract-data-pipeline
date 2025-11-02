@@ -102,7 +102,7 @@ def query_books(author=None, keyword=None, topic=None, limit=20):
 
 if __name__ == "__main__":
     # Build index (≈ 35–50 MB for full English Public Domain)
-    # populate_db()  # Uncomment to build
+    populate_db(limit=None)  # Uncomment to build
 
     results = query_books(author="Edgar Allan Poe", keyword="short story")
     for r in results:

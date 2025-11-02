@@ -1,35 +1,49 @@
 #!/usr/bin/env python3
-import io, re, tarfile, zipfile, requests, time, tempfile
+# source_gutenberg_rdf.py
+# Stream Project Gutenberg RDF metadata from the full tarball (cached locally)
+# Yields IDs, titles, authors, subjects, rights, and language.
+
+import re, tarfile, zipfile, requests, time
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 RDF_FEED_URL = "https://www.gutenberg.org/cache/epub/feeds/rdf-files.tar.zip"
+CACHE_PATH = Path("data/rdf-files.tar.zip")
+CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+def ensure_feed_cached():
+    """Download the full RDF feed once and cache it locally (~3–4 GB)."""
+    if CACHE_PATH.exists():
+        print(f"[{time.strftime('%H:%M:%S')}] ✅ Using cached feed: {CACHE_PATH}")
+        return CACHE_PATH
+
+    print(f"[{time.strftime('%H:%M:%S')}] ⬇️ Downloading full RDF feed (~3–4 GB)...")
+    with requests.get(RDF_FEED_URL, stream=True, timeout=1800) as r:
+        r.raise_for_status()
+        total = 0
+        with open(CACHE_PATH, "wb") as f:
+            for chunk in r.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+                    total += len(chunk)
+                    if total % (100 * 1024 * 1024) < 1024 * 1024:
+                        print(f"[{time.strftime('%H:%M:%S')}] Downloaded {total/1e6:.0f} MB...")
+    print(f"[{time.strftime('%H:%M:%S')}] ✅ Saved to {CACHE_PATH}")
+    return CACHE_PATH
+
 
 def stream_rdf_entries(limit=50, language="en", topic=None):
     """
-    Stream-parse Gutenberg RDF feed directly from the zip archive.
-    Yields dicts: {"id": int, "title": str, "author": str, "subjects": [str], "rights": str}
+    Parse Gutenberg RDF feed from cached zip.
+    Yields dicts: {"id": int, "title": str, "author": str, "subjects": [str], "language": [str], "rights": str}
     """
-    print(f"[{time.strftime('%H:%M:%S')}] 📥 Downloading RDF feed header…")
+    zip_path = ensure_feed_cached()
 
-    # Download to temp file for true streaming read
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
-    with requests.get(RDF_FEED_URL, stream=True, timeout=600) as r:
-        r.raise_for_status()
-        total = 0
-        for chunk in r.iter_content(chunk_size=1024 * 1024):
-            tmp.write(chunk)
-            total += len(chunk)
-            if total > 50_000_000:  # stop early (first ~50MB)
-                break
-    tmp.flush()
-    tmp.seek(0)
-
-    print(f"[{time.strftime('%H:%M:%S')}] 🔍 Parsing first portion of RDF feed (~{total//1e6:.1f} MB)…")
-
-    with zipfile.ZipFile(tmp.name) as z:
+    print(f"[{time.strftime('%H:%M:%S')}] 🔍 Opening {zip_path.name} ...")
+    with zipfile.ZipFile(zip_path) as z:
         tar_name = next((n for n in z.namelist() if n.endswith(".tar")), None)
-        if tar_name is None:
-            raise RuntimeError("No .tar found inside RDF zip!")
+        if not tar_name:
+            raise RuntimeError("❌ No .tar found inside ZIP archive.")
 
         with z.open(tar_name) as tar_stream:
             with tarfile.open(fileobj=tar_stream, mode="r|") as tf:
@@ -68,14 +82,16 @@ def stream_rdf_entries(limit=50, language="en", topic=None):
                             for s in ebook.findall(".//dcterms:subject/rdf:Description/rdf:value", ns)
                             if s.text
                         ]
+
                         rights_el = ebook.find("dcterms:rights", ns)
                         rights = rights_el.text.strip() if rights_el is not None else ""
 
-                        # Filter by language/topic
                         langs = [
                             l.text for l in ebook.findall(".//dcterms:language/rdf:Description/rdf:value", ns)
                             if l.text
                         ]
+
+                        # Filter by language/topic
                         if language and not any(language in l for l in langs):
                             continue
                         if topic and not any(topic.lower() in s.lower() for s in subjects):
@@ -87,7 +103,7 @@ def stream_rdf_entries(limit=50, language="en", topic=None):
                             "author": author,
                             "subjects": subjects,
                             "language": langs,
-                            "rights": rights,
+                            "rights": rights
                         }
 
                         count += 1
@@ -95,6 +111,7 @@ def stream_rdf_entries(limit=50, language="en", topic=None):
                             break
                     except Exception:
                         continue
+
 
 if __name__ == "__main__":
     for i, book in enumerate(stream_rdf_entries(limit=10, language="en")):
