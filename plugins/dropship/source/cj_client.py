@@ -174,6 +174,27 @@ class CJClient:
         resp = self.session.get(url, params=params, headers=self._auth_headers(), timeout=30)
         resp.raise_for_status()
         return resp.json().get("data", {})
+    def iter_hybrid_catalog(
+        self,
+        keyword: str,
+        page_start: int = 1,
+        page_end: int = 100,
+        size: int = 100,
+        time_start_ms: Optional[int] = None,
+        time_end_ms: Optional[int] = None,
+        sleep_between_pages: float = 0.5,
+    ):
+        """Iterate through search pages and yield normalized products."""
+        for page in range(page_start, page_end + 1):
+            results = self.search_products(keyword, page=page, size=size)
+            if not results:
+                break
+
+            for product in results:
+                yield product
+
+            time.sleep(sleep_between_pages)
+
 
 
 # ─────────────────────────────────────────────

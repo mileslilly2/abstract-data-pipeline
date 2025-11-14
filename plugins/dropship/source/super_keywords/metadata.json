@@ -1,0 +1,11 @@
+{
+  "downloaded": {
+    "amazon": false,
+    "aliexpress": false,
+    "wish": false,
+    "flipkart": false,
+    "google_taxonomy": true,
+    "wikipedia_ngrams": true
+  },
+  "total_entries": 375701
+}
