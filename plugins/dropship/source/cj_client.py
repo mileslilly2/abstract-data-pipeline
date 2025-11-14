@@ -143,29 +143,52 @@ class CJClient:
     # ─────────────────────────────────────────────
     # PRODUCT SEARCH listV2
     # ─────────────────────────────────────────────
-    def search_products(self, keyword: str, page: int = 1, size: int = 20) -> List[Dict[str, Any]]:
+        # ─────────────────────────────────────────────
+    # PRODUCT SEARCH listV2  ← THIS WAS MISSING
+    # ─────────────────────────────────────────────
+    def search_products(self, keyword: str, page: int = 1, size: int = 100) -> List[Dict[str, Any]]:
+        """
+        Calls CJ product/listV2 with automatic rate-limit handling (429),
+        exponential backoff, and error safety.
+        """
         url = f"{self.base_url}/product/listV2"
         params = {
             "page": page,
             "size": size,
-            "keyWord": keyword,
-            "features": ["enable_description", "enable_category", "enable_video"],
+            "keyword": keyword,
+            "features": "enable_category,enable_description,enable_video",
         }
 
-        resp = self.session.get(url, params=params, headers=self._auth_headers(), timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
+        # Retry loop with backoff
+        for attempt in range(7):
+            resp = self.session.get(
+                url,
+                params=params,
+                headers=self._auth_headers(),
+                timeout=30
+            )
 
-        content_blocks = (data.get("data") or {}).get("content") or []
-        results: List[Dict[str, Any]] = []
+            status = resp.status_code
 
-        for block in content_blocks:
-            for p in block.get("productList", []) or []:
-                results.append(self.normalize_product(p))
+            # Success
+            if status < 400:
+                data = resp.json()
+                if isinstance(data, dict):
+                    return data.get("data", [])
+                return []
 
-        return results
+            # Rate limit
+            if status == 429:
+                delay = (2 ** attempt) + (0.5 * attempt)
+                print(f"⚠️ 429 rate limited on page {page}, retrying in {delay:.1f}s...")
+                time.sleep(delay)
+                continue
 
-    # ─────────────────────────────────────────────
+            # Any other error
+            resp.raise_for_status()
+
+        raise RuntimeError(f"CJ API still rate-limiting after retries (keyword={keyword}, page={page})")
+
     # FULL PRODUCT DETAIL LOOKUP
     # ─────────────────────────────────────────────
     def get_product(self, pid: str) -> Dict[str, Any]:
