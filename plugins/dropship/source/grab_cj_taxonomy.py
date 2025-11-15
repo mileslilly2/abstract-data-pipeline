@@ -11,7 +11,7 @@ from typing import List, Dict, Any
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from cj_client import make_client_from_env
+from cj_client import make_client_from_env, CJRateLimitError
 
 # ------------------------------------------------------------
 # CONSTANTS
@@ -22,7 +22,7 @@ PARQUET_GROUP_SIZE = 500  # flush after this many rows
 
 
 # ------------------------------------------------------------
-# 429-SAFE RETRY WRAPPER
+# 429-SAFE RETRY WRAPPER (kept for future use if needed)
 # ------------------------------------------------------------
 def safe_get_with_retry(session, url, params, headers, max_retries=8):
     for attempt in range(max_retries):
@@ -79,20 +79,19 @@ def load_checkpoint() -> Dict[str, Any]:
     if CHECKPOINT_PATH.exists():
         try:
             return json.loads(CHECKPOINT_PATH.read_text())
-        except:
+        except Exception:
             pass
     return {"last_category_index": 0, "product_count": 0}
 
 
 def save_checkpoint(idx: int, count: int):
-    CHECKPOINT_PATH.write_text(json.dumps(
-        {"last_category_index": idx, "product_count": count},
-        indent=2
-    ))
+    CHECKPOINT_PATH.write_text(
+        json.dumps({"last_category_index": idx, "product_count": count}, indent=2)
+    )
 
 
 # ------------------------------------------------------------
-# PARQUET WRITER (CORRECT VERSION)
+# PARQUET WRITER
 # ------------------------------------------------------------
 parquet_writer = None
 parquet_schema = None
@@ -129,10 +128,10 @@ def flush_parquet(buffer: List[Dict[str, Any]]):
 # ------------------------------------------------------------
 def grab_by_taxonomy_advanced(
     taxonomy_path: str,
-    page_start=1,
-    page_end=3,
-    size=100,
-    sleep=0.5,
+    page_start: int = 1,
+    page_end: int = 3,
+    size: int = 100,
+    sleep: float = 0.5,
 ):
 
     client = make_client_from_env()
@@ -143,7 +142,7 @@ def grab_by_taxonomy_advanced(
     print(f"[CJ] Resuming at index {checkpoint['last_category_index']}")
 
     seen_ids = set()
-    parquet_buffer = []
+    parquet_buffer: List[Dict[str, Any]] = []
     total_saved = checkpoint["product_count"]
 
     # Start from checkpoint index
@@ -153,36 +152,50 @@ def grab_by_taxonomy_advanced(
 
         print(f"\n[CJ] ({idx}/{len(categories)}) Searching keyword: {keyword}")
 
-        for product in client.iter_hybrid_catalog(
-            keyword=keyword,
-            page_start=page_start,
-            page_end=page_end,
-            size=size,
-            sleep_between_pages=sleep,
-        ):
-            if not isinstance(product, dict):
-                continue
+        try:
+            # iterate pages for this keyword
+            for product in client.iter_hybrid_catalog(
+                keyword=keyword,
+                page_start=page_start,
+                page_end=page_end,
+                size=size,
+                sleep_between_pages=sleep,
+            ):
+                if not isinstance(product, dict):
+                    continue
 
-            pid = product.get("id")
+                pid = product.get("id")
+                if not pid:
+                    continue
 
-            if not pid:
-                continue
+                if pid in seen_ids:
+                    continue  # dedupe
 
-            if pid in seen_ids:
-                continue  # dedupe
+                seen_ids.add(pid)
 
-            seen_ids.add(pid)
+                # tag with taxonomy info
+                product["google_category"] = cat
+                product["google_keyword"] = keyword
 
-            product["google_category"] = cat
-            product["google_keyword"] = keyword
+                parquet_buffer.append(product)
+                total_saved += 1
 
-            parquet_buffer.append(product)
-            total_saved += 1
+                if len(parquet_buffer) >= PARQUET_GROUP_SIZE:
+                    flush_parquet(parquet_buffer)
 
-            if len(parquet_buffer) >= PARQUET_GROUP_SIZE:
-                flush_parquet(parquet_buffer)
+        except CJRateLimitError as e:
+            # If CJ keeps 429-ing for this keyword, log it, checkpoint, and move on.
+            print(
+                f"[CJ WARN] Rate limit encountered for keyword '{keyword}' "
+                f"(category index {idx}). Skipping this category for now.\n"
+                f"Details: {e}"
+            )
+            # optional: short sleep to avoid hammering if it's a global cooldown
+            time.sleep(60)
 
-        save_checkpoint(idx, total_saved)  # save progress
+        # Always checkpoint after each category (success or skipped)
+        save_checkpoint(idx + 1, total_saved)
+        print(f"[CJ] Checkpoint saved at category index {idx+1}, total_saved={total_saved}")
 
     # Final flush
     flush_parquet(parquet_buffer)

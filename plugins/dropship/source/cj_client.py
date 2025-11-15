@@ -4,10 +4,16 @@
 import requests
 import time
 import json
+import random
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import os
 from dotenv import load_dotenv
+
+
+class CJRateLimitError(RuntimeError):
+    """Raised when the CJ API keeps returning 429 after multiple retries."""
+    pass
 
 
 class CJClient:
@@ -141,62 +147,108 @@ class CJClient:
         }
 
     # ─────────────────────────────────────────────
-    # PRODUCT SEARCH listV2
+    # PRODUCT SEARCH listV2  (with 429-safe backoff)
     # ─────────────────────────────────────────────
-        # ─────────────────────────────────────────────
-    # PRODUCT SEARCH listV2  ← THIS WAS MISSING
-    # ─────────────────────────────────────────────
-    def search_products(self, keyword: str, page: int = 1, size: int = 100) -> List[Dict[str, Any]]:
+    def search_products(
+        self,
+        keyword: str,
+        page: int = 1,
+        size: int = 100,
+        max_retries: int = 8,
+    ) -> List[Dict[str, Any]]:
         """
         Calls CJ product/listV2 with automatic rate-limit handling (429),
-        exponential backoff, and error safety.
+        exponential backoff + Retry-After + jitter.
+        Raises CJRateLimitError if still 429 after retries.
         """
         url = f"{self.base_url}/product/listV2"
         params = {
             "page": page,
             "size": size,
             "keyword": keyword,
+            # always include rich features
             "features": "enable_category,enable_description,enable_video",
         }
 
-        # Retry loop with backoff
-        for attempt in range(7):
-            resp = self.session.get(
-                url,
-                params=params,
-                headers=self._auth_headers(),
-                timeout=30
-            )
+        last_status = None
+
+        for attempt in range(max_retries):
+            try:
+                resp = self.session.get(
+                    url,
+                    params=params,
+                    headers=self._auth_headers(),
+                    timeout=30,
+                )
+            except requests.RequestException as e:
+                # network/connection error → backoff + retry
+                backoff = min(2 ** attempt, 60)
+                wait_time = backoff + random.random()
+                print(f"⚠️ Network error on page {page}: {e}. Retrying in {wait_time:.1f}s...")
+                time.sleep(wait_time)
+                continue
 
             status = resp.status_code
+            last_status = status
 
             # Success
             if status < 400:
                 data = resp.json()
                 if isinstance(data, dict):
-                    return data.get("data", [])
+                    return data.get("data", []) or []
                 return []
 
             # Rate limit
             if status == 429:
-                delay = (2 ** attempt) + (0.5 * attempt)
-                print(f"⚠️ 429 rate limited on page {page}, retrying in {delay:.1f}s...")
-                time.sleep(delay)
+                retry_after_header = resp.headers.get("Retry-After")
+                retry_after = 0
+                if retry_after_header:
+                    try:
+                        retry_after = int(retry_after_header)
+                    except ValueError:
+                        retry_after = 0
+
+                backoff = min(2 ** attempt, 60)
+                wait_time = max(retry_after, backoff) + random.random()
+
+                print(
+                    f"⚠️ 429 rate limited on page {page}, keyword='{keyword}'. "
+                    f"Waiting {wait_time:.1f}s (retry {attempt+1}/{max_retries})..."
+                )
+                time.sleep(wait_time)
                 continue
 
-            # Any other error
-            resp.raise_for_status()
+            # Any other HTTP error
+            try:
+                resp.raise_for_status()
+            except Exception as e:
+                print(f"❌ HTTP error on page {page}, keyword='{keyword}': {e}")
+                raise
 
-        raise RuntimeError(f"CJ API still rate-limiting after retries (keyword={keyword}, page={page})")
+        # If we exhausted retries and still mostly saw 429s, signal rate-limit
+        if last_status == 429:
+            raise CJRateLimitError(
+                f"CJ API still rate-limiting after {max_retries} retries "
+                f"(keyword={keyword}, page={page})"
+            )
 
+        raise RuntimeError(
+            f"CJ API request failed after {max_retries} retries "
+            f"(keyword={keyword}, page={page}, last_status={last_status})"
+        )
+
+    # ─────────────────────────────────────────────
     # FULL PRODUCT DETAIL LOOKUP
     # ─────────────────────────────────────────────
     def get_product(self, pid: str) -> Dict[str, Any]:
         url = f"{self.base_url}/product/query"
         params = {"pid": pid}
-        resp = self.session.get(url, params=params, headers=self._auth_headers(), timeout=30)
+        resp = self.session.get(
+            url, params=params, headers=self._auth_headers(), timeout=30
+        )
         resp.raise_for_status()
         return resp.json().get("data", {})
+
     def iter_hybrid_catalog(
         self,
         keyword: str,
@@ -207,26 +259,35 @@ class CJClient:
         time_end_ms: Optional[int] = None,
         sleep_between_pages: float = 0.5,
     ):
-        """Iterate through search pages and yield normalized products."""
+        """
+        Iterate through search pages and yield raw products.
+        NOTE: CJRateLimitError can bubble up to the caller if search_products
+        keeps getting 429s; callers should handle that.
+        """
         for page in range(page_start, page_end + 1):
-            results = self.search_products(keyword, page=page, size=size)
+            results = self.search_products(
+                keyword=keyword,
+                page=page,
+                size=size,
+            )
+
             if not results:
+                # no more products for this keyword
                 break
 
             for product in results:
                 yield product
 
+            # polite pause between pages so we don't hammer the API
             time.sleep(sleep_between_pages)
 
 
-
 # ─────────────────────────────────────────────
-# FACTORY: make_client_from_env  ← REQUIRED FOR YOUR IMPORT
+# FACTORY: make_client_from_env
 # ─────────────────────────────────────────────
 def make_client_from_env() -> CJClient:
     """
     Automatically loads CJ_EMAIL and CJ_API_KEY from environment or .env file.
-    This is the function your cj_catalog.py imports.
     """
     load_dotenv()
     email = os.getenv("CJ_EMAIL")
@@ -238,7 +299,6 @@ def make_client_from_env() -> CJClient:
     return CJClient(email=email, api_key=api_key)
 
 
-
 # ─────────────────────────────────────────────
 # Manual test
 # ─────────────────────────────────────────────
@@ -246,5 +306,4 @@ if __name__ == "__main__":
     client = make_client_from_env()
     print(client)
     products = client.search_products("hoodie", size=5)
-    print(products)
     print(json.dumps(products, indent=2))
