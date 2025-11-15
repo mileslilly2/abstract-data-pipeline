@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-# cj_client.py — Persistent CJ Dropshipping API client with auto-refresh tokens
+# cj_client.py — CJ Dropshipping API client with product search, normalization, and auto-refresh tokens
 
 import requests
 import time
 import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+import os
+from dotenv import load_dotenv
 
 
 class CJClient:
@@ -36,7 +38,6 @@ class CJClient:
             "token_expiry": self.token_expiry,
         }
         self.token_path.write_text(json.dumps(data, indent=2))
-        print(f"[saved tokens → {self.token_path}]")
 
     def _load_tokens(self):
         if self.token_path.exists():
@@ -45,7 +46,6 @@ class CJClient:
                 self.access_token = data.get("access_token")
                 self.refresh_token = data.get("refresh_token")
                 self.token_expiry = data.get("token_expiry", 0)
-                print(f"[loaded tokens from {self.token_path}]")
             except Exception:
                 pass
 
@@ -53,14 +53,15 @@ class CJClient:
     #  AUTHENTICATION
     # ────────────────────────────────
     def authenticate(self) -> str:
-        """Login with email + API key."""
         url = f"{self.base_url}/authentication/getAccessToken"
         payload = {"email": self.email, "apiKey": self.api_key}
         resp = self.session.post(url, json=payload, timeout=30)
         resp.raise_for_status()
         data = resp.json()
+
         if not data.get("success"):
             raise RuntimeError(f"Authentication failed: {data}")
+
         auth_data = data["data"]
         self.access_token = auth_data["accessToken"]
         self.refresh_token = auth_data["refreshToken"]
@@ -69,17 +70,18 @@ class CJClient:
         return self.access_token
 
     def refresh_access_token(self) -> str:
-        """Refresh access token using refresh token."""
         if not self.refresh_token:
             return self.authenticate()
+
         url = f"{self.base_url}/authentication/refreshAccessToken"
         payload = {"refreshToken": self.refresh_token}
         resp = self.session.post(url, json=payload, timeout=30)
         resp.raise_for_status()
         data = resp.json()
+
         if not data.get("success"):
-            print("[refresh failed → reauthenticating]")
             return self.authenticate()
+
         auth_data = data["data"]
         self.access_token = auth_data["accessToken"]
         self.token_expiry = time.time() + auth_data.get("expiresIn", 3600 * 24 * 15)
@@ -87,57 +89,71 @@ class CJClient:
         return self.access_token
 
     # ────────────────────────────────
-    #  HEADER BUILDER
+    #  AUTH HEADERS
     # ────────────────────────────────
     def _auth_headers(self) -> Dict[str, str]:
         if not self.access_token or time.time() >= self.token_expiry:
-            print("[token expired → refreshing]")
             self.refresh_access_token()
         return {"CJ-Access-Token": self.access_token, "Accept": "application/json"}
 
     # ────────────────────────────────
-    #  PRODUCT SEARCH
+    #  PRODUCT NORMALIZER (listV2)
     # ────────────────────────────────
-    def search_products(self, q: str, page: int = 1, size: int = 50) -> List[Dict[str, Any]]:
-        url = f"{self.base_url}/product/list"
-        payload = {"keyword": q, "pageNum": page, "pageSize": size}
-        resp = self.session.post(url, json=payload, headers=self._auth_headers(), timeout=30)
+    @staticmethod
+    def normalize_product(raw: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            "id": raw.get("id"),
+            "name": raw.get("nameEn"),
+            "sku": raw.get("sku"),
+            "image": raw.get("bigImage"),
+            "price": raw.get("sellPrice"),
+            "discount_price": raw.get("discountPrice") or raw.get("nowPrice"),
+            "category": raw.get("threeCategoryName") or raw.get("twoCategoryName"),
+            "listed_count": raw.get("listedNum"),
+            "inventory": raw.get("warehouseInventoryNum"),
+            "currency": raw.get("currency", "USD"),
+        }
+
+    # ────────────────────────────────
+    #  PRODUCT SEARCH (listV2 — correct endpoint)
+    # ────────────────────────────────
+    def search_products(self, keyword: str, page: int = 1, size: int = 20) -> List[Dict[str, Any]]:
+        url = f"{self.base_url}/product/listV2"
+        params = {"page": page, "size": size, "keyWord": keyword}
+
+        resp = self.session.get(url, params=params, headers=self._auth_headers(), timeout=30)
         resp.raise_for_status()
         data = resp.json()
-        return data.get("data", {}).get("list", [])
+
+        content_blocks = (data.get("data") or {}).get("content") or []
+        results: List[Dict[str, Any]] = []
+
+        for block in content_blocks:
+            for p in block.get("productList", []) or []:
+                results.append(self.normalize_product(p))
+
+        return results
 
     # ────────────────────────────────
-    #  PRODUCT DETAIL
+    #  PRODUCT DETAIL LOOKUP (pid or sku)
     # ────────────────────────────────
-    def get_product(self, product_id: str) -> Dict[str, Any]:
-        url = f"{self.base_url}/product/detail"
-        payload = {"productId": product_id}
-        resp = self.session.post(url, json=payload, headers=self._auth_headers(), timeout=30)
+    def get_product(self, pid: str) -> Dict[str, Any]:
+        url = f"{self.base_url}/product/query"
+        params = {"pid": pid}
+        resp = self.session.get(url, params=params, headers=self._auth_headers(), timeout=30)
         resp.raise_for_status()
-        return resp.json()
-
-    # ────────────────────────────────
-    #  ORDER CREATION
-    # ────────────────────────────────
-    def create_order(self, order_payload: Dict[str, Any]) -> Dict[str, Any]:
-        url = f"{self.base_url}/order/create"
-        resp = self.session.post(url, json=order_payload, headers=self._auth_headers(), timeout=30)
-        resp.raise_for_status()
-        return resp.json()
+        return resp.json().get("data", {})
 
 
 # ────────────────────────────────
-#  SAMPLE USAGE
+#  USAGE EXAMPLE
 # ────────────────────────────────
 if __name__ == "__main__":
-    # Replace with your CJ credentials
-    EMAIL = "mieslilly@egmail.com"
-    API_KEY = "c80c88e4863b42a4a9eff4bc3f06c8e6"
+    load_dotenv()
+    EMAIL = os.getenv("CJ_EMAIL")
+    API_KEY = os.getenv("CJ_API_KEY")
 
     cj = CJClient(email=EMAIL, api_key=API_KEY)
+    products = cj.search_products("hoodie", size=5)
 
-    # Search for products
-    products = cj.search_products("t-shirt", page=1, size=5)
-
-    for p in products:
-        print(f"{p.get('productName')} — {p.get('productSku')}")
+    print(json.dumps(products, indent=2))
