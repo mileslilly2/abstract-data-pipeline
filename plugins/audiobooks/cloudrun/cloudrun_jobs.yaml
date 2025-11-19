@@ -6,7 +6,7 @@ spec:
   template:
     spec:
       containers:
-        - image: gcr.io/YOUR_PROJECT_ID/kokoro-tts
+        - image: gcr.io/YOUR_PROJECT_ID/kokoro-ttsc
           command: ["python", "job_tts.py"]
           env:
             - name: TTS_INPUT
