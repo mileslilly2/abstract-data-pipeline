@@ -1,259 +1,231 @@
 #!/usr/bin/env python3
 """
-cj_retro_catalog_pipeline.py — CJ Dropshipping retro electronics bulk scraper
-- Search retro gaming products from CJ
-- Fetch full product details
-- Dedupe + basic normalize
+cj_pull_retro_products.py
+Pull RETRO GAMING products directly from CJ Dropshipping.
+No database. No taxonomy. Just direct retro searches.
+
+- Searches retro-related keywords
+- Fetches full product detail for each pid
+- Dedupe
 - Save JSONL, Parquet, Shopify CSV
 """
 
 import os
 import json
 import time
-import hashlib
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 from pathlib import Path
 from typing import List, Dict, Any
 
 import requests
-import pandas as pd
-import pyarrow.parquet as pq
-import pyarrow as pa
-
-from cj_client import make_client_from_env, CJClient
+from cj_client import make_client_from_env
 
 
-# ──────────────────────────────────────────────
-# Retro gaming keywords for CJ
-# ──────────────────────────────────────────────
+# ---------------------------------------------------------------
+# Retro keywords for direct CJ API searching
+# ---------------------------------------------------------------
 
 RETRO_KEYWORDS = [
     "retro gaming",
+    "retro console",
     "game console",
     "handheld game",
-    "n64 controller",
-    "snes controller",
-    "usb controller",
-    "retro arcade",
-    "arcade stick",
-    "sega",
+    "gamepad",
+    "controller",
+    "arcade",
+    "joystick",
+    "emulator",
+    "n64",
+    "snes",
     "nes",
     "ps1",
+    "ps2",
+    "sega",
+    "genesis",
+    "dreamcast",
+    "gba",
+    "gbc",
+    "game boy",
+    "raspberry pi",
 ]
 
-# ──────────────────────────────────────────────
+
+# ---------------------------------------------------------------
 # Output paths
-# ──────────────────────────────────────────────
+# ---------------------------------------------------------------
 
-OUTPUT_DIR = Path("cj_retro_outputs")
-OUTPUT_DIR.mkdir(exist_ok=True)
-IMAGES_DIR = OUTPUT_DIR / "images"
-IMAGES_DIR.mkdir(exist_ok=True)
+OUT_DIR = Path("cj_retro_outputs")
+OUT_DIR.mkdir(exist_ok=True)
 
-RAW_JSONL = OUTPUT_DIR / "cj_retro_raw.jsonl"
-PARQUET_PATH = OUTPUT_DIR / "cj_retro_catalog.parquet"
-SHOPIFY_CSV_PATH = OUTPUT_DIR / "shopify_cj_retro_catalog.csv"
+JSONL_PATH = OUT_DIR / "cj_retro.jsonl"
+PARQUET_PATH = OUT_DIR / "cj_retro.parquet"
+SHOPIFY_CSV_PATH = OUT_DIR / "cj_retro_shopify.csv"
 
 
-# ──────────────────────────────────────────────
-# CJ API helpers
-# ──────────────────────────────────────────────
+# ---------------------------------------------------------------
+# CJ API wrappers
+# ---------------------------------------------------------------
 
-def cj_search_products(client: CJClient, keyword: str, page: int = 1, size: int = 50):
-    """Call CJ product.listV2"""
+def cj_search(client, keyword: str, page=1, size=50):
+    """
+    Call CJ /product/list (search)
+    """
     url = f"{client.base_url}/product/list"
+    headers = {"CJ-Access-Token": client.access_token}
     params = {"pageNum": page, "pageSize": size, "keyword": keyword}
-    resp = client.session.get(url, params=params, headers={"CJ-Access-Token": client.access_token})
+
+    resp = client.session.get(url, params=params, headers=headers, timeout=20)
+    if resp.status_code == 429:
+        raise RuntimeError("Rate limited (429). Try again later.")
+
     resp.raise_for_status()
-    return resp.json().get("data", {}).get("result", [])
+    data = resp.json()
+    result = data.get("data", {}).get("result", [])
+    return result
 
 
-def cj_get_detail(client: CJClient, product_id: str):
-    """Fetch full product detail"""
+def cj_detail(client, pid: str):
+    """
+    Full CJ product detail
+    """
     url = f"{client.base_url}/product/detail"
-    resp = client.session.get(url, params={"pid": product_id}, headers={"CJ-Access-Token": client.access_token})
+    headers = {"CJ-Access-Token": client.access_token}
+    params = {"pid": pid}
+
+    resp = client.session.get(url, params=params, headers=headers, timeout=20)
     resp.raise_for_status()
     return resp.json().get("data", {})
 
 
-# ──────────────────────────────────────────────
-# Crawl CJ retro products
-# ──────────────────────────────────────────────
+# ---------------------------------------------------------------
+# Main retro crawler
+# ---------------------------------------------------------------
 
-def crawl_cj_retro(client: CJClient, keywords: List[str]):
-    results = []
+def crawl_retro_products():
+    client = make_client_from_env()
 
-    for kw in keywords:
+    all_products: List[Dict[str, Any]] = []
+    seen = set()
+
+    for kw in RETRO_KEYWORDS:
         print(f"[CJ] Searching keyword: {kw}")
-        page = 1
 
+        page = 1
         while True:
-            items = cj_search_products(client, kw, page=page, size=50)
-            if not items:
+            try:
+                results = cj_search(client, kw, page=page, size=50)
+            except Exception as e:
+                print(f"[CJ WARN] Error: {e}")
                 break
 
-            for it in items:
-                pid = it.get("pid")
-                if not pid:
+            if not results:
+                break
+
+            for item in results:
+                pid = item.get("pid")
+                if not pid or pid in seen:
                     continue
 
+                seen.add(pid)
+
+                # Fetch detail
                 try:
-                    detail = cj_get_detail(client, pid)
+                    detail = cj_detail(client, pid)
                 except Exception as e:
-                    print(f"  ! detail error {pid}: {e}")
+                    print(f"[CJ WARN] Detail error {pid}: {e}")
                     continue
 
                 detail["_keyword"] = kw
-                results.append(detail)
+                all_products.append(detail)
 
-            if len(items) < 50:
+            # If fewer than 50, no more pages
+            if len(results) < 50:
                 break
 
             page += 1
+            time.sleep(0.5)  # small delay to avoid 429
 
-    return results
-
-
-# ──────────────────────────────────────────────
-# Dedupe + Image extraction
-# ──────────────────────────────────────────────
-
-def dedupe(items: List[Dict[str, Any]]):
-    out = []
-    seen = set()
-
-    for p in items:
-        pid = p.get("pid")
-        if not pid:
-            continue
-        if pid in seen:
-            continue
-        seen.add(pid)
-        out.append(p)
-
-    print(f"[DEDUPE] kept {len(out)} items")
-    return out
+    print(f"[CJ] Total retro products collected: {len(all_products)}")
+    return all_products
 
 
-def extract_images(p: Dict[str, Any]):
-    imgs = []
-    main = p.get("image") or []
-    if isinstance(main, list):
-        imgs.extend([x for x in main if x.startswith("http")])
-
-    # gallery
-    gal = p.get("imageList") or []
-    if isinstance(gal, list):
-        imgs.extend([x for x in gal if isinstance(x, str) and x.startswith("http")])
-
-    return list(dict.fromkeys(imgs))
-
-
-# ──────────────────────────────────────────────
-# Normalize CJ → basic Shopify-ready shape
-# ──────────────────────────────────────────────
-
-def normalize_cj(p: Dict[str, Any]):
-    title = p.get("nameEn") or p.get("name") or ""
-    desc = p.get("description") or ""
-
-    price = None
-    if p.get("sellPrice"):
-        price = p["sellPrice"]
-    elif p.get("productPrice"):
-        price = p["productPrice"]
-
-    imgs = extract_images(p)
-
-    norm = {
-        "id": p.get("pid"),
-        "source": "cj",
-        "title": title,
-        "description": desc,
-        "vendor": "CJ Dropshipping",
-        "category": p.get("categoryName") or "Electronics / Retro",
-        "tags": [p.get("_keyword", "")],
-        "price": price,
-        "currency": "USD",
-        "url": p.get("productUrl"),
-        "image_urls": imgs,
-        "raw": p,
-    }
-    return norm
-
-
-# ──────────────────────────────────────────────
+# ---------------------------------------------------------------
 # Save outputs
-# ──────────────────────────────────────────────
+# ---------------------------------------------------------------
 
-def save_jsonl(items):
-    with RAW_JSONL.open("w", encoding="utf8") as f:
-        for row in items:
-            f.write(json.dumps(row) + "\n")
-    print(f"[OUT] JSONL -> {RAW_JSONL}")
-
-
-def save_parquet(items):
-    df = pd.json_normalize(items)
-    table = pa.Table.from_pandas(df)
-    pq.write_table(table, PARQUET_PATH)
-    print(f"[OUT] Parquet -> {PARQUET_PATH}")
+def save_jsonl(products):
+    with JSONL_PATH.open("w", encoding="utf-8") as f:
+        for p in products:
+            f.write(json.dumps(p) + "\n")
+    print(f"[OUT] JSONL → {JSONL_PATH}")
 
 
-def save_shopify_csv(items):
+def save_parquet(products):
+    df = pd.json_normalize(products)
+    pq.write_table(pa.Table.from_pandas(df), PARQUET_PATH)
+    print(f"[OUT] Parquet → {PARQUET_PATH}")
+
+
+def save_shopify(products):
     rows = []
-    for p in items:
+
+    for p in products:
+        title = p.get("nameEn") or p.get("name") or "Retro Item"
+        desc = p.get("description") or ""
+        category = p.get("categoryName") or "Retro Gaming"
+        pid = p.get("pid")
+        price = p.get("sellPrice") or p.get("productPrice") or ""
+
+        # first image
+        imgs = p.get("image") or p.get("imageList") or []
+        img_src = imgs[0] if isinstance(imgs, list) and imgs else ""
+
+        # handle
         handle = (
-            p["title"].lower()
+            title.lower()
             .replace(" ", "-")
             .replace("/", "-")
+            .replace("&", "and")
         )
         handle = "".join(ch for ch in handle if ch.isalnum() or ch == "-")
 
-        img = p["image_urls"][0] if p["image_urls"] else ""
-
         rows.append({
             "Handle": handle,
-            "Title": p["title"],
-            "Body (HTML)": p["description"],
+            "Title": title,
+            "Body (HTML)": desc,
             "Vendor": "CJ Dropshipping",
-            "Type": p["category"],
-            "Tags": ",".join(filter(None, p["tags"])),
+            "Type": category,
+            "Tags": "retro-gaming",
             "Published": "TRUE",
             "Option1 Name": "Title",
             "Option1 Value": "Default Title",
-            "Variant SKU": p["id"],
-            "Variant Price": p["price"] or "",
+            "Variant SKU": pid,
+            "Variant Price": price,
             "Variant Inventory Qty": 0,
             "Variant Requires Shipping": "TRUE",
             "Variant Taxable": "TRUE",
-            "Image Src": img,
+            "Image Src": img_src,
         })
 
     df = pd.DataFrame(rows)
     df.to_csv(SHOPIFY_CSV_PATH, index=False)
-    print(f"[OUT] Shopify CSV -> {SHOPIFY_CSV_PATH}")
+    print(f"[OUT] Shopify CSV → {SHOPIFY_CSV_PATH}")
 
 
-# ──────────────────────────────────────────────
-# MAIN
-# ──────────────────────────────────────────────
+# ---------------------------------------------------------------
+# Entrypoint
+# ---------------------------------------------------------------
 
 def main():
-    client = make_client_from_env()
+    products = crawl_retro_products()
 
-    print("[CJ] Crawling retro gaming products…")
-    raw = crawl_cj_retro(client, RETRO_KEYWORDS)
+    save_jsonl(products)
+    save_parquet(products)
+    save_shopify(products)
 
-    print(f"[CJ] Raw count: {len(raw)}")
-    raw = dedupe(raw)
-
-    normalized = [normalize_cj(p) for p in raw]
-
-    save_jsonl(normalized)
-    save_parquet(normalized)
-    save_shopify_csv(normalized)
-
-    print("\n[DONE] CJ retro catalog pipeline complete.\n")
+    print("[CJ RETRO] DONE.")
 
 
 if __name__ == "__main__":
