@@ -1,6 +1,5 @@
 fastapi
-uvicorn
-kokoro
+uvicorn[standard]
+kokoro-onnx
 soundfile
 numpy
-onnxruntime

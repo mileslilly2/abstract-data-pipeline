@@ -1,33 +1,24 @@
-# ───────────────────────────────────────────────
-# Kokoro TTS microservice — Cloud Run compatible
-# Supports both FastAPI (main.py) and batch jobs (job_tts.py)
-# ───────────────────────────────────────────────
+# Dockerfile
+FROM python:3.10-slim
 
-FROM python:3.11-slim
+# Prevent Python buffering
+ENV PYTHONUNBUFFERED=1
 
-# Working directory
 WORKDIR /app
 
-# Copy dependency list
 COPY requirements.txt .
 
-# Install lightweight system deps (ffmpeg for pydub/audio export)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
- && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir fastapi uvicorn soundfile kokoro-onnx
+RUN apt-get update && apt-get install -y libsndfile1 && apt-get clean
 
-# Upgrade pip and install Python dependencies
-RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy application code
 COPY . .
 
-# Environment variable for Cloud Run
+# Cloud Run requires the app to listen on PORT
 ENV PORT=8080
 
-# Expose port for FastAPI (ignored by Cloud Run but good practice)
+# Expose port for local testing (optional)
 EXPOSE 8080
 
-# Start FastAPI when Cloud Run uses this image as a web service
-# When used as a Job, Cloud Run will override this CMD
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Start FastAPI server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "1000"]
