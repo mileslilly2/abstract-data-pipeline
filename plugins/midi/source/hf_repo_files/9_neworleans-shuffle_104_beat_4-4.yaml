@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 9_neworleans-shuffle_104_beat_4-4.csv
+fps: 24
+out: out/9_neworleans-shuffle_104_beat_4-4.mp4
+palette: Blues
+time: time
+title: 9 Neworleans-Shuffle 104 Beat 4-4
+value: amplitude

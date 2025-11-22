@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 54_jazz_125_fill_4-4.csv
+fps: 24
+out: out/54_jazz_125_fill_4-4.mp4
+palette: Blues
+time: time
+title: 54 Jazz 125 Fill 4-4
+value: amplitude

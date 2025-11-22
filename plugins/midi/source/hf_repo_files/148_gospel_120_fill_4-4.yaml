@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 148_gospel_120_fill_4-4.csv
+fps: 24
+out: out/148_gospel_120_fill_4-4.mp4
+palette: Blues
+time: time
+title: 148 Gospel 120 Fill 4-4
+value: amplitude

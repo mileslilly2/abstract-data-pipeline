@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 169_latin-brazilian-baiao_95_fill_4-4.csv
+fps: 24
+out: out/169_latin-brazilian-baiao_95_fill_4-4.mp4
+palette: Blues
+time: time
+title: 169 Latin-Brazilian-Baiao 95 Fill 4-4
+value: amplitude

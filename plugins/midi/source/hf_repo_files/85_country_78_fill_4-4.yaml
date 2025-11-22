@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 85_country_78_fill_4-4.csv
+fps: 24
+out: out/85_country_78_fill_4-4.mp4
+palette: Blues
+time: time
+title: 85 Country 78 Fill 4-4
+value: amplitude

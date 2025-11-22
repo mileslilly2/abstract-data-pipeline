@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 91_hiphop_75_fill_4-4.csv
+fps: 24
+out: out/91_hiphop_75_fill_4-4.mp4
+palette: Blues
+time: time
+title: 91 Hiphop 75 Fill 4-4
+value: amplitude

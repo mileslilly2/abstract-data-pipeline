@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 16_rock_120_beat_4-4.csv
+fps: 24
+out: out/16_rock_120_beat_4-4.mp4
+palette: Blues
+time: time
+title: 16 Rock 120 Beat 4-4
+value: amplitude
