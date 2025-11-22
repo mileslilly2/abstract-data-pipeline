@@ -1,0 +1,227 @@
+{
+  "source": "/home/miles/Documents/abstract-data-pipeline/plugins/midi/source/hf_repo_files/169_latin-brazilian-baiao_95_fill_4-4.mid",
+  "ticks_per_beat": 480,
+  "length_seconds": 3.0013112874999996,
+  "events": [
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 34,
+      "time": 0.023684175
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 0.12499981249999999
+    },
+    {
+      "type": "note_on",
+      "pitch": 44,
+      "velocity": 55,
+      "time": 0.26447328749999993
+    },
+    {
+      "type": "note_off",
+      "pitch": 44,
+      "time": 0.3657889249999999
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 34,
+      "time": 0.4631571999999999
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 0.5644728374999999
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 43,
+      "time": 0.7407883624999998
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.8421039999999999
+    },
+    {
+      "type": "note_on",
+      "pitch": 44,
+      "velocity": 72,
+      "time": 0.8973670749999999
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 29,
+      "time": 0.9144723124999999
+    },
+    {
+      "type": "note_off",
+      "pitch": 44,
+      "time": 0.9999984999999999
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 1.01578795
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 35,
+      "time": 1.039472125
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 1.1407877625000002
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 28,
+      "time": 1.2078929250000001
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 27,
+      "time": 1.234208675
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 1.307892775
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 1.334208525
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 23,
+      "time": 1.3631558499999998
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 1.4644714874999998
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 23,
+      "time": 1.5013135375
+    },
+    {
+      "type": "note_on",
+      "pitch": 44,
+      "velocity": 75,
+      "time": 1.54210295
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 1.602629175
+    },
+    {
+      "type": "note_off",
+      "pitch": 44,
+      "time": 1.6434185874999998
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 38,
+      "time": 1.6631553999999997
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 36,
+      "time": 1.7052606
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 1.7644710375
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 1.8065762374999998
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 45,
+      "time": 1.8355235625
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 1.9368392
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 66,
+      "time": 1.9855233375
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 2.0868389750000005
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 29,
+      "time": 2.1618388625000007
+    },
+    {
+      "type": "note_on",
+      "pitch": 44,
+      "velocity": 77,
+      "time": 2.1684178000000007
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 2.2631545000000006
+    },
+    {
+      "type": "note_off",
+      "pitch": 44,
+      "time": 2.2697334375000007
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 81,
+      "time": 2.2986807625000005
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 2.3986806125
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 38,
+      "time": 2.4855225874999998
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 2.5868382249999993
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "description": "Index of local CSV, JSON, and WAV files for ADP pipeline.",
+  "total_counts": {
+    "csv": 0,
+    "json": 0,
+    "wav": 0
+  },
+  "files": []
+}

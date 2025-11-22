@@ -1,0 +1,128 @@
+{
+  "source": "/home/miles/Documents/abstract-data-pipeline/plugins/midi/source/hf_repo_files/211_rock-halftime_140_fill_4-4.mid",
+  "ticks_per_beat": 480,
+  "length_seconds": 3.00088985625,
+  "events": [
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 99,
+      "time": 0.0
+    },
+    {
+      "type": "note_on",
+      "pitch": 43,
+      "velocity": 127,
+      "time": 0.0053571375
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 0.0946427625
+    },
+    {
+      "type": "note_off",
+      "pitch": 43,
+      "time": 0.10089275625
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 67,
+      "time": 0.210714075
+    },
+    {
+      "type": "note_on",
+      "pitch": 43,
+      "velocity": 76,
+      "time": 0.22142835
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 0.310713975
+    },
+    {
+      "type": "note_off",
+      "pitch": 43,
+      "time": 0.32321396249999995
+    },
+    {
+      "type": "note_on",
+      "pitch": 43,
+      "velocity": 82,
+      "time": 0.41607101249999995
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 70,
+      "time": 0.41696386874999997
+    },
+    {
+      "type": "note_off",
+      "pitch": 43,
+      "time": 0.5169637687499999
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 0.5169637687499999
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 48,
+      "time": 0.6187493812499999
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 0.7196421375
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 111,
+      "time": 0.8312491687499999
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.8651777062499999
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 127,
+      "time": 0.8651777062499999
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.93303478125
+    },
+    {
+      "type": "note_on",
+      "pitch": 40,
+      "velocity": 122,
+      "time": 1.0616060812499999
+    },
+    {
+      "type": "note_off",
+      "pitch": 40,
+      "time": 1.1624988374999998
+    },
+    {
+      "type": "note_on",
+      "pitch": 40,
+      "velocity": 112,
+      "time": 1.2776772937499998
+    },
+    {
+      "type": "note_off",
+      "pitch": 40,
+      "time": 1.3785700499999998
+    }
+  ]
+}

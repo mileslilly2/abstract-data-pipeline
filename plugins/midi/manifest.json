@@ -1,0 +1,911 @@
+{
+  "version": "1.0.0",
+  "description": "Machine-readable index for WAV, JSON, and CSV assets used in ADP pipelines.",
+  "counts": {
+    "csv": 50,
+    "json": 50,
+    "wav": 50
+  },
+  "files": [
+    {
+      "type": "csv",
+      "name": "135_soul_105_fill_4-4.csv",
+      "path": "data/csv/135_soul_105_fill_4-4.csv",
+      "size_bytes": 3570078
+    },
+    {
+      "type": "csv",
+      "name": "6_hiphop-groove6_87_beat_4-4.csv",
+      "path": "data/csv/6_hiphop-groove6_87_beat_4-4.csv",
+      "size_bytes": 32951927
+    },
+    {
+      "type": "csv",
+      "name": "27_hiphop_100_fill_4-4.csv",
+      "path": "data/csv/27_hiphop_100_fill_4-4.csv",
+      "size_bytes": 4412817
+    },
+    {
+      "type": "csv",
+      "name": "39_latin-samba_116_fill_4-4.csv",
+      "path": "data/csv/39_latin-samba_116_fill_4-4.csv",
+      "size_bytes": 3599947
+    },
+    {
+      "type": "csv",
+      "name": "63_punk_144_fill_4-4.csv",
+      "path": "data/csv/63_punk_144_fill_4-4.csv",
+      "size_bytes": 2902905
+    },
+    {
+      "type": "csv",
+      "name": "139_soul_105_fill_4-4.csv",
+      "path": "data/csv/139_soul_105_fill_4-4.csv",
+      "size_bytes": 4601026
+    },
+    {
+      "type": "csv",
+      "name": "170_latin-brazilian-baiao_95_fill_4-4.csv",
+      "path": "data/csv/170_latin-brazilian-baiao_95_fill_4-4.csv",
+      "size_bytes": 3691236
+    },
+    {
+      "type": "csv",
+      "name": "10_soul-groove10_102_beat_4-4.csv",
+      "path": "data/csv/10_soul-groove10_102_beat_4-4.csv",
+      "size_bytes": 28431073
+    },
+    {
+      "type": "csv",
+      "name": "85_country_78_fill_4-4.csv",
+      "path": "data/csv/85_country_78_fill_4-4.csv",
+      "size_bytes": 6136219
+    },
+    {
+      "type": "csv",
+      "name": "91_neworleans-funk_93_beat_4-4.csv",
+      "path": "data/csv/91_neworleans-funk_93_beat_4-4.csv",
+      "size_bytes": 27178331
+    },
+    {
+      "type": "csv",
+      "name": "91_hiphop_75_fill_4-4.csv",
+      "path": "data/csv/91_hiphop_75_fill_4-4.csv",
+      "size_bytes": 6803736
+    },
+    {
+      "type": "csv",
+      "name": "188_reggae_78_fill_4-4.csv",
+      "path": "data/csv/188_reggae_78_fill_4-4.csv",
+      "size_bytes": 3770614
+    },
+    {
+      "type": "csv",
+      "name": "125_funk_95_fill_4-4.csv",
+      "path": "data/csv/125_funk_95_fill_4-4.csv",
+      "size_bytes": 3589865
+    },
+    {
+      "type": "csv",
+      "name": "13_rock_130_beat_4-4.csv",
+      "path": "data/csv/13_rock_130_beat_4-4.csv",
+      "size_bytes": 4366972
+    },
+    {
+      "type": "csv",
+      "name": "46_rock_135_beat_4-4.csv",
+      "path": "data/csv/46_rock_135_beat_4-4.csv",
+      "size_bytes": 25173821
+    },
+    {
+      "type": "csv",
+      "name": "222_rock-halftime_140_fill_4-4.csv",
+      "path": "data/csv/222_rock-halftime_140_fill_4-4.csv",
+      "size_bytes": 3609288
+    },
+    {
+      "type": "csv",
+      "name": "148_gospel_120_fill_4-4.csv",
+      "path": "data/csv/148_gospel_120_fill_4-4.csv",
+      "size_bytes": 3579339
+    },
+    {
+      "type": "csv",
+      "name": "150_gospel_120_fill_4-4.csv",
+      "path": "data/csv/150_gospel_120_fill_4-4.csv",
+      "size_bytes": 3268334
+    },
+    {
+      "type": "csv",
+      "name": "17_country_114_fill_4-4.csv",
+      "path": "data/csv/17_country_114_fill_4-4.csv",
+      "size_bytes": 3136600
+    },
+    {
+      "type": "csv",
+      "name": "140_funk-fast_125_fill_4-4.csv",
+      "path": "data/csv/140_funk-fast_125_fill_4-4.csv",
+      "size_bytes": 3606675
+    },
+    {
+      "type": "csv",
+      "name": "104_funk-rock_92_fill_4-4.csv",
+      "path": "data/csv/104_funk-rock_92_fill_4-4.csv",
+      "size_bytes": 3361507
+    },
+    {
+      "type": "csv",
+      "name": "57_soul-motown_148_fill_4-4.csv",
+      "path": "data/csv/57_soul-motown_148_fill_4-4.csv",
+      "size_bytes": 9617105
+    },
+    {
+      "type": "csv",
+      "name": "18_rock_120_beat_4-4.csv",
+      "path": "data/csv/18_rock_120_beat_4-4.csv",
+      "size_bytes": 64876644
+    },
+    {
+      "type": "csv",
+      "name": "16_rock_120_beat_4-4.csv",
+      "path": "data/csv/16_rock_120_beat_4-4.csv",
+      "size_bytes": 7020778
+    },
+    {
+      "type": "csv",
+      "name": "74_jazz_125_fill_4-4.csv",
+      "path": "data/csv/74_jazz_125_fill_4-4.csv",
+      "size_bytes": 3620275
+    },
+    {
+      "type": "csv",
+      "name": "3_funk_80_beat_4-4.csv",
+      "path": "data/csv/3_funk_80_beat_4-4.csv",
+      "size_bytes": 90798407
+    },
+    {
+      "type": "csv",
+      "name": "60_funk_112_fill_4-4.csv",
+      "path": "data/csv/60_funk_112_fill_4-4.csv",
+      "size_bytes": 3966068
+    },
+    {
+      "type": "csv",
+      "name": "1_rock_60_beat_4-4.csv",
+      "path": "data/csv/1_rock_60_beat_4-4.csv",
+      "size_bytes": 60096721
+    },
+    {
+      "type": "csv",
+      "name": "129_afrocuban-bembe_122_fill_4-4.csv",
+      "path": "data/csv/129_afrocuban-bembe_122_fill_4-4.csv",
+      "size_bytes": 3079719
+    },
+    {
+      "type": "csv",
+      "name": "9_neworleans-shuffle_104_beat_4-4.csv",
+      "path": "data/csv/9_neworleans-shuffle_104_beat_4-4.csv",
+      "size_bytes": 93658544
+    },
+    {
+      "type": "csv",
+      "name": "261_funk-purdieshuffle_130_fill_4-4.csv",
+      "path": "data/csv/261_funk-purdieshuffle_130_fill_4-4.csv",
+      "size_bytes": 3577693
+    },
+    {
+      "type": "csv",
+      "name": "104_hiphop_70_fill_4-4.csv",
+      "path": "data/csv/104_hiphop_70_fill_4-4.csv",
+      "size_bytes": 4076939
+    },
+    {
+      "type": "csv",
+      "name": "11_rock_100_beat_4-4.csv",
+      "path": "data/csv/11_rock_100_beat_4-4.csv",
+      "size_bytes": 9801863
+    },
+    {
+      "type": "csv",
+      "name": "74_punk_144_fill_4-4.csv",
+      "path": "data/csv/74_punk_144_fill_4-4.csv",
+      "size_bytes": 3142228
+    },
+    {
+      "type": "csv",
+      "name": "109_rock_95_beat_4-4.csv",
+      "path": "data/csv/109_rock_95_beat_4-4.csv",
+      "size_bytes": 32237628
+    },
+    {
+      "type": "csv",
+      "name": "155_soul_98_fill_4-4.csv",
+      "path": "data/csv/155_soul_98_fill_4-4.csv",
+      "size_bytes": 5115911
+    },
+    {
+      "type": "csv",
+      "name": "5_rock_130_fill_4-4.csv",
+      "path": "data/csv/5_rock_130_fill_4-4.csv",
+      "size_bytes": 5754358
+    },
+    {
+      "type": "csv",
+      "name": "54_jazz_125_fill_4-4.csv",
+      "path": "data/csv/54_jazz_125_fill_4-4.csv",
+      "size_bytes": 3865317
+    },
+    {
+      "type": "csv",
+      "name": "40_hiphop_110_beat_4-4.csv",
+      "path": "data/csv/40_hiphop_110_beat_4-4.csv",
+      "size_bytes": 14026452
+    },
+    {
+      "type": "csv",
+      "name": "7_latin_95_beat_4-4.csv",
+      "path": "data/csv/7_latin_95_beat_4-4.csv",
+      "size_bytes": 159253729
+    },
+    {
+      "type": "csv",
+      "name": "5_rock_60_beat_6-8.csv",
+      "path": "data/csv/5_rock_60_beat_6-8.csv",
+      "size_bytes": 56296036
+    },
+    {
+      "type": "csv",
+      "name": "7_rock_130_beat_4-4.csv",
+      "path": "data/csv/7_rock_130_beat_4-4.csv",
+      "size_bytes": 33277889
+    },
+    {
+      "type": "csv",
+      "name": "4_soul-groove4_80_beat_4-4.csv",
+      "path": "data/csv/4_soul-groove4_80_beat_4-4.csv",
+      "size_bytes": 35975495
+    },
+    {
+      "type": "csv",
+      "name": "7_pop-groove7_138_beat_4-4.csv",
+      "path": "data/csv/7_pop-groove7_138_beat_4-4.csv",
+      "size_bytes": 21732176
+    },
+    {
+      "type": "csv",
+      "name": "92_hiphop_70_beat_4-4.csv",
+      "path": "data/csv/92_hiphop_70_beat_4-4.csv",
+      "size_bytes": 100958919
+    },
+    {
+      "type": "csv",
+      "name": "15_funk_95_beat_4-4.csv",
+      "path": "data/csv/15_funk_95_beat_4-4.csv",
+      "size_bytes": 130091488
+    },
+    {
+      "type": "csv",
+      "name": "211_rock-halftime_140_fill_4-4.csv",
+      "path": "data/csv/211_rock-halftime_140_fill_4-4.csv",
+      "size_bytes": 3616159
+    },
+    {
+      "type": "csv",
+      "name": "169_latin-brazilian-baiao_95_fill_4-4.csv",
+      "path": "data/csv/169_latin-brazilian-baiao_95_fill_4-4.csv",
+      "size_bytes": 3623769
+    },
+    {
+      "type": "csv",
+      "name": "22_jazz-funk_116_fill_4-4.csv",
+      "path": "data/csv/22_jazz-funk_116_fill_4-4.csv",
+      "size_bytes": 3596317
+    },
+    {
+      "type": "csv",
+      "name": "2_latin-brazilian_101_beat_4-4.csv",
+      "path": "data/csv/2_latin-brazilian_101_beat_4-4.csv",
+      "size_bytes": 48406296
+    },
+    {
+      "type": "json",
+      "name": "22_jazz-funk_116_fill_4-4.json",
+      "path": "data/json/22_jazz-funk_116_fill_4-4.json",
+      "size_bytes": 4062
+    },
+    {
+      "type": "json",
+      "name": "129_afrocuban-bembe_122_fill_4-4.json",
+      "path": "data/json/129_afrocuban-bembe_122_fill_4-4.json",
+      "size_bytes": 2238
+    },
+    {
+      "type": "json",
+      "name": "222_rock-halftime_140_fill_4-4.json",
+      "path": "data/json/222_rock-halftime_140_fill_4-4.json",
+      "size_bytes": 1961
+    },
+    {
+      "type": "json",
+      "name": "4_soul-groove4_80_beat_4-4.json",
+      "path": "data/json/4_soul-groove4_80_beat_4-4.json",
+      "size_bytes": 44339
+    },
+    {
+      "type": "json",
+      "name": "150_gospel_120_fill_4-4.json",
+      "path": "data/json/150_gospel_120_fill_4-4.json",
+      "size_bytes": 2764
+    },
+    {
+      "type": "json",
+      "name": "135_soul_105_fill_4-4.json",
+      "path": "data/json/135_soul_105_fill_4-4.json",
+      "size_bytes": 3247
+    },
+    {
+      "type": "json",
+      "name": "85_country_78_fill_4-4.json",
+      "path": "data/json/85_country_78_fill_4-4.json",
+      "size_bytes": 3019
+    },
+    {
+      "type": "json",
+      "name": "7_rock_130_beat_4-4.json",
+      "path": "data/json/7_rock_130_beat_4-4.json",
+      "size_bytes": 73369
+    },
+    {
+      "type": "json",
+      "name": "261_funk-purdieshuffle_130_fill_4-4.json",
+      "path": "data/json/261_funk-purdieshuffle_130_fill_4-4.json",
+      "size_bytes": 2896
+    },
+    {
+      "type": "json",
+      "name": "13_rock_130_beat_4-4.json",
+      "path": "data/json/13_rock_130_beat_4-4.json",
+      "size_bytes": 3997
+    },
+    {
+      "type": "json",
+      "name": "104_funk-rock_92_fill_4-4.json",
+      "path": "data/json/104_funk-rock_92_fill_4-4.json",
+      "size_bytes": 5457
+    },
+    {
+      "type": "json",
+      "name": "60_funk_112_fill_4-4.json",
+      "path": "data/json/60_funk_112_fill_4-4.json",
+      "size_bytes": 3014
+    },
+    {
+      "type": "json",
+      "name": "2_latin-brazilian_101_beat_4-4.json",
+      "path": "data/json/2_latin-brazilian_101_beat_4-4.json",
+      "size_bytes": 138022
+    },
+    {
+      "type": "json",
+      "name": "18_rock_120_beat_4-4.json",
+      "path": "data/json/18_rock_120_beat_4-4.json",
+      "size_bytes": 118063
+    },
+    {
+      "type": "json",
+      "name": "3_funk_80_beat_4-4.json",
+      "path": "data/json/3_funk_80_beat_4-4.json",
+      "size_bytes": 214724
+    },
+    {
+      "type": "json",
+      "name": "169_latin-brazilian-baiao_95_fill_4-4.json",
+      "path": "data/json/169_latin-brazilian-baiao_95_fill_4-4.json",
+      "size_bytes": 4177
+    },
+    {
+      "type": "json",
+      "name": "27_hiphop_100_fill_4-4.json",
+      "path": "data/json/27_hiphop_100_fill_4-4.json",
+      "size_bytes": 4256
+    },
+    {
+      "type": "json",
+      "name": "109_rock_95_beat_4-4.json",
+      "path": "data/json/109_rock_95_beat_4-4.json",
+      "size_bytes": 68949
+    },
+    {
+      "type": "json",
+      "name": "188_reggae_78_fill_4-4.json",
+      "path": "data/json/188_reggae_78_fill_4-4.json",
+      "size_bytes": 2711
+    },
+    {
+      "type": "json",
+      "name": "17_country_114_fill_4-4.json",
+      "path": "data/json/17_country_114_fill_4-4.json",
+      "size_bytes": 3412
+    },
+    {
+      "type": "json",
+      "name": "5_rock_60_beat_6-8.json",
+      "path": "data/json/5_rock_60_beat_6-8.json",
+      "size_bytes": 85293
+    },
+    {
+      "type": "json",
+      "name": "16_rock_120_beat_4-4.json",
+      "path": "data/json/16_rock_120_beat_4-4.json",
+      "size_bytes": 10964
+    },
+    {
+      "type": "json",
+      "name": "91_neworleans-funk_93_beat_4-4.json",
+      "path": "data/json/91_neworleans-funk_93_beat_4-4.json",
+      "size_bytes": 85156
+    },
+    {
+      "type": "json",
+      "name": "104_hiphop_70_fill_4-4.json",
+      "path": "data/json/104_hiphop_70_fill_4-4.json",
+      "size_bytes": 5243
+    },
+    {
+      "type": "json",
+      "name": "6_hiphop-groove6_87_beat_4-4.json",
+      "path": "data/json/6_hiphop-groove6_87_beat_4-4.json",
+      "size_bytes": 65264
+    },
+    {
+      "type": "json",
+      "name": "1_rock_60_beat_4-4.json",
+      "path": "data/json/1_rock_60_beat_4-4.json",
+      "size_bytes": 95329
+    },
+    {
+      "type": "json",
+      "name": "140_funk-fast_125_fill_4-4.json",
+      "path": "data/json/140_funk-fast_125_fill_4-4.json",
+      "size_bytes": 3311
+    },
+    {
+      "type": "json",
+      "name": "139_soul_105_fill_4-4.json",
+      "path": "data/json/139_soul_105_fill_4-4.json",
+      "size_bytes": 4234
+    },
+    {
+      "type": "json",
+      "name": "5_rock_130_fill_4-4.json",
+      "path": "data/json/5_rock_130_fill_4-4.json",
+      "size_bytes": 7425
+    },
+    {
+      "type": "json",
+      "name": "170_latin-brazilian-baiao_95_fill_4-4.json",
+      "path": "data/json/170_latin-brazilian-baiao_95_fill_4-4.json",
+      "size_bytes": 4647
+    },
+    {
+      "type": "json",
+      "name": "39_latin-samba_116_fill_4-4.json",
+      "path": "data/json/39_latin-samba_116_fill_4-4.json",
+      "size_bytes": 3042
+    },
+    {
+      "type": "json",
+      "name": "9_neworleans-shuffle_104_beat_4-4.json",
+      "path": "data/json/9_neworleans-shuffle_104_beat_4-4.json",
+      "size_bytes": 355440
+    },
+    {
+      "type": "json",
+      "name": "148_gospel_120_fill_4-4.json",
+      "path": "data/json/148_gospel_120_fill_4-4.json",
+      "size_bytes": 2417
+    },
+    {
+      "type": "json",
+      "name": "91_hiphop_75_fill_4-4.json",
+      "path": "data/json/91_hiphop_75_fill_4-4.json",
+      "size_bytes": 8653
+    },
+    {
+      "type": "json",
+      "name": "92_hiphop_70_beat_4-4.json",
+      "path": "data/json/92_hiphop_70_beat_4-4.json",
+      "size_bytes": 237226
+    },
+    {
+      "type": "json",
+      "name": "125_funk_95_fill_4-4.json",
+      "path": "data/json/125_funk_95_fill_4-4.json",
+      "size_bytes": 2746
+    },
+    {
+      "type": "json",
+      "name": "7_pop-groove7_138_beat_4-4.json",
+      "path": "data/json/7_pop-groove7_138_beat_4-4.json",
+      "size_bytes": 53615
+    },
+    {
+      "type": "json",
+      "name": "15_funk_95_beat_4-4.json",
+      "path": "data/json/15_funk_95_beat_4-4.json",
+      "size_bytes": 247169
+    },
+    {
+      "type": "json",
+      "name": "11_rock_100_beat_4-4.json",
+      "path": "data/json/11_rock_100_beat_4-4.json",
+      "size_bytes": 11784
+    },
+    {
+      "type": "json",
+      "name": "155_soul_98_fill_4-4.json",
+      "path": "data/json/155_soul_98_fill_4-4.json",
+      "size_bytes": 4439
+    },
+    {
+      "type": "json",
+      "name": "46_rock_135_beat_4-4.json",
+      "path": "data/json/46_rock_135_beat_4-4.json",
+      "size_bytes": 67228
+    },
+    {
+      "type": "json",
+      "name": "54_jazz_125_fill_4-4.json",
+      "path": "data/json/54_jazz_125_fill_4-4.json",
+      "size_bytes": 5414
+    },
+    {
+      "type": "json",
+      "name": "211_rock-halftime_140_fill_4-4.json",
+      "path": "data/json/211_rock-halftime_140_fill_4-4.json",
+      "size_bytes": 2385
+    },
+    {
+      "type": "json",
+      "name": "10_soul-groove10_102_beat_4-4.json",
+      "path": "data/json/10_soul-groove10_102_beat_4-4.json",
+      "size_bytes": 55770
+    },
+    {
+      "type": "json",
+      "name": "74_punk_144_fill_4-4.json",
+      "path": "data/json/74_punk_144_fill_4-4.json",
+      "size_bytes": 2794
+    },
+    {
+      "type": "json",
+      "name": "7_latin_95_beat_4-4.json",
+      "path": "data/json/7_latin_95_beat_4-4.json",
+      "size_bytes": 367965
+    },
+    {
+      "type": "json",
+      "name": "40_hiphop_110_beat_4-4.json",
+      "path": "data/json/40_hiphop_110_beat_4-4.json",
+      "size_bytes": 24085
+    },
+    {
+      "type": "json",
+      "name": "74_jazz_125_fill_4-4.json",
+      "path": "data/json/74_jazz_125_fill_4-4.json",
+      "size_bytes": 3518
+    },
+    {
+      "type": "json",
+      "name": "57_soul-motown_148_fill_4-4.json",
+      "path": "data/json/57_soul-motown_148_fill_4-4.json",
+      "size_bytes": 14808
+    },
+    {
+      "type": "json",
+      "name": "63_punk_144_fill_4-4.json",
+      "path": "data/json/63_punk_144_fill_4-4.json",
+      "size_bytes": 2550
+    },
+    {
+      "type": "wav",
+      "name": "125_funk_95_fill_4-4.wav",
+      "path": "data/wav/125_funk_95_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "18_rock_120_beat_4-4.wav",
+      "path": "data/wav/18_rock_120_beat_4-4.wav",
+      "size_bytes": 16386860
+    },
+    {
+      "type": "wav",
+      "name": "222_rock-halftime_140_fill_4-4.wav",
+      "path": "data/wav/222_rock-halftime_140_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "5_rock_130_fill_4-4.wav",
+      "path": "data/wav/5_rock_130_fill_4-4.wav",
+      "size_bytes": 1419052
+    },
+    {
+      "type": "wav",
+      "name": "17_country_114_fill_4-4.wav",
+      "path": "data/wav/17_country_114_fill_4-4.wav",
+      "size_bytes": 767532
+    },
+    {
+      "type": "wav",
+      "name": "148_gospel_120_fill_4-4.wav",
+      "path": "data/wav/148_gospel_120_fill_4-4.wav",
+      "size_bytes": 867372
+    },
+    {
+      "type": "wav",
+      "name": "63_punk_144_fill_4-4.wav",
+      "path": "data/wav/63_punk_144_fill_4-4.wav",
+      "size_bytes": 714284
+    },
+    {
+      "type": "wav",
+      "name": "92_hiphop_70_beat_4-4.wav",
+      "path": "data/wav/92_hiphop_70_beat_4-4.wav",
+      "size_bytes": 25308716
+    },
+    {
+      "type": "wav",
+      "name": "11_rock_100_beat_4-4.wav",
+      "path": "data/wav/11_rock_100_beat_4-4.wav",
+      "size_bytes": 2450220
+    },
+    {
+      "type": "wav",
+      "name": "6_hiphop-groove6_87_beat_4-4.wav",
+      "path": "data/wav/6_hiphop-groove6_87_beat_4-4.wav",
+      "size_bytes": 8118828
+    },
+    {
+      "type": "wav",
+      "name": "261_funk-purdieshuffle_130_fill_4-4.wav",
+      "path": "data/wav/261_funk-purdieshuffle_130_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "60_funk_112_fill_4-4.wav",
+      "path": "data/wav/60_funk_112_fill_4-4.wav",
+      "size_bytes": 965932
+    },
+    {
+      "type": "wav",
+      "name": "22_jazz-funk_116_fill_4-4.wav",
+      "path": "data/wav/22_jazz-funk_116_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "91_neworleans-funk_93_beat_4-4.wav",
+      "path": "data/wav/91_neworleans-funk_93_beat_4-4.wav",
+      "size_bytes": 6850348
+    },
+    {
+      "type": "wav",
+      "name": "7_latin_95_beat_4-4.wav",
+      "path": "data/wav/7_latin_95_beat_4-4.wav",
+      "size_bytes": 39651372
+    },
+    {
+      "type": "wav",
+      "name": "13_rock_130_beat_4-4.wav",
+      "path": "data/wav/13_rock_130_beat_4-4.wav",
+      "size_bytes": 1064748
+    },
+    {
+      "type": "wav",
+      "name": "140_funk-fast_125_fill_4-4.wav",
+      "path": "data/wav/140_funk-fast_125_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "109_rock_95_beat_4-4.wav",
+      "path": "data/wav/109_rock_95_beat_4-4.wav",
+      "size_bytes": 8021036
+    },
+    {
+      "type": "wav",
+      "name": "104_hiphop_70_fill_4-4.wav",
+      "path": "data/wav/104_hiphop_70_fill_4-4.wav",
+      "size_bytes": 995628
+    },
+    {
+      "type": "wav",
+      "name": "3_funk_80_beat_4-4.wav",
+      "path": "data/wav/3_funk_80_beat_4-4.wav",
+      "size_bytes": 22526252
+    },
+    {
+      "type": "wav",
+      "name": "150_gospel_120_fill_4-4.wav",
+      "path": "data/wav/150_gospel_120_fill_4-4.wav",
+      "size_bytes": 803884
+    },
+    {
+      "type": "wav",
+      "name": "74_jazz_125_fill_4-4.wav",
+      "path": "data/wav/74_jazz_125_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "4_soul-groove4_80_beat_4-4.wav",
+      "path": "data/wav/4_soul-groove4_80_beat_4-4.wav",
+      "size_bytes": 8913452
+    },
+    {
+      "type": "wav",
+      "name": "155_soul_98_fill_4-4.wav",
+      "path": "data/wav/155_soul_98_fill_4-4.wav",
+      "size_bytes": 1248044
+    },
+    {
+      "type": "wav",
+      "name": "135_soul_105_fill_4-4.wav",
+      "path": "data/wav/135_soul_105_fill_4-4.wav",
+      "size_bytes": 884780
+    },
+    {
+      "type": "wav",
+      "name": "57_soul-motown_148_fill_4-4.wav",
+      "path": "data/wav/57_soul-motown_148_fill_4-4.wav",
+      "size_bytes": 2414124
+    },
+    {
+      "type": "wav",
+      "name": "39_latin-samba_116_fill_4-4.wav",
+      "path": "data/wav/39_latin-samba_116_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "169_latin-brazilian-baiao_95_fill_4-4.wav",
+      "path": "data/wav/169_latin-brazilian-baiao_95_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "188_reggae_78_fill_4-4.wav",
+      "path": "data/wav/188_reggae_78_fill_4-4.wav",
+      "size_bytes": 917292
+    },
+    {
+      "type": "wav",
+      "name": "211_rock-halftime_140_fill_4-4.wav",
+      "path": "data/wav/211_rock-halftime_140_fill_4-4.wav",
+      "size_bytes": 882732
+    },
+    {
+      "type": "wav",
+      "name": "139_soul_105_fill_4-4.wav",
+      "path": "data/wav/139_soul_105_fill_4-4.wav",
+      "size_bytes": 1126188
+    },
+    {
+      "type": "wav",
+      "name": "7_pop-groove7_138_beat_4-4.wav",
+      "path": "data/wav/7_pop-groove7_138_beat_4-4.wav",
+      "size_bytes": 5349164
+    },
+    {
+      "type": "wav",
+      "name": "7_rock_130_beat_4-4.wav",
+      "path": "data/wav/7_rock_130_beat_4-4.wav",
+      "size_bytes": 8273708
+    },
+    {
+      "type": "wav",
+      "name": "1_rock_60_beat_4-4.wav",
+      "path": "data/wav/1_rock_60_beat_4-4.wav",
+      "size_bytes": 14894892
+    },
+    {
+      "type": "wav",
+      "name": "15_funk_95_beat_4-4.wav",
+      "path": "data/wav/15_funk_95_beat_4-4.wav",
+      "size_bytes": 32532268
+    },
+    {
+      "type": "wav",
+      "name": "104_funk-rock_92_fill_4-4.wav",
+      "path": "data/wav/104_funk-rock_92_fill_4-4.wav",
+      "size_bytes": 831788
+    },
+    {
+      "type": "wav",
+      "name": "54_jazz_125_fill_4-4.wav",
+      "path": "data/wav/54_jazz_125_fill_4-4.wav",
+      "size_bytes": 949036
+    },
+    {
+      "type": "wav",
+      "name": "10_soul-groove10_102_beat_4-4.wav",
+      "path": "data/wav/10_soul-groove10_102_beat_4-4.wav",
+      "size_bytes": 7070252
+    },
+    {
+      "type": "wav",
+      "name": "5_rock_60_beat_6-8.wav",
+      "path": "data/wav/5_rock_60_beat_6-8.wav",
+      "size_bytes": 14056236
+    },
+    {
+      "type": "wav",
+      "name": "170_latin-brazilian-baiao_95_fill_4-4.wav",
+      "path": "data/wav/170_latin-brazilian-baiao_95_fill_4-4.wav",
+      "size_bytes": 908332
+    },
+    {
+      "type": "wav",
+      "name": "46_rock_135_beat_4-4.wav",
+      "path": "data/wav/46_rock_135_beat_4-4.wav",
+      "size_bytes": 6315564
+    },
+    {
+      "type": "wav",
+      "name": "74_punk_144_fill_4-4.wav",
+      "path": "data/wav/74_punk_144_fill_4-4.wav",
+      "size_bytes": 768556
+    },
+    {
+      "type": "wav",
+      "name": "2_latin-brazilian_101_beat_4-4.wav",
+      "path": "data/wav/2_latin-brazilian_101_beat_4-4.wav",
+      "size_bytes": 12073004
+    },
+    {
+      "type": "wav",
+      "name": "85_country_78_fill_4-4.wav",
+      "path": "data/wav/85_country_78_fill_4-4.wav",
+      "size_bytes": 1515308
+    },
+    {
+      "type": "wav",
+      "name": "129_afrocuban-bembe_122_fill_4-4.wav",
+      "path": "data/wav/129_afrocuban-bembe_122_fill_4-4.wav",
+      "size_bytes": 758060
+    },
+    {
+      "type": "wav",
+      "name": "16_rock_120_beat_4-4.wav",
+      "path": "data/wav/16_rock_120_beat_4-4.wav",
+      "size_bytes": 1749036
+    },
+    {
+      "type": "wav",
+      "name": "27_hiphop_100_fill_4-4.wav",
+      "path": "data/wav/27_hiphop_100_fill_4-4.wav",
+      "size_bytes": 1089836
+    },
+    {
+      "type": "wav",
+      "name": "40_hiphop_110_beat_4-4.wav",
+      "path": "data/wav/40_hiphop_110_beat_4-4.wav",
+      "size_bytes": 3511084
+    },
+    {
+      "type": "wav",
+      "name": "9_neworleans-shuffle_104_beat_4-4.wav",
+      "path": "data/wav/9_neworleans-shuffle_104_beat_4-4.wav",
+      "size_bytes": 23623468
+    },
+    {
+      "type": "wav",
+      "name": "91_hiphop_75_fill_4-4.wav",
+      "path": "data/wav/91_hiphop_75_fill_4-4.wav",
+      "size_bytes": 1671724
+    }
+  ]
+}

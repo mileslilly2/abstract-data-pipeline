@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 261_funk-purdieshuffle_130_fill_4-4.csv
+fps: 24
+out: out/261_funk-purdieshuffle_130_fill_4-4.mp4
+palette: Blues
+time: time
+title: 261 Funk-Purdieshuffle 130 Fill 4-4
+value: amplitude

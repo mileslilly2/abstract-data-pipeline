@@ -1,0 +1,106 @@
+{
+  "source": "/home/miles/Documents/abstract-data-pipeline/plugins/midi/source/hf_repo_files/222_rock-halftime_140_fill_4-4.mid",
+  "ticks_per_beat": 480,
+  "length_seconds": 3.00088985625,
+  "events": [
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 95,
+      "time": 0.0
+    },
+    {
+      "type": "note_on",
+      "pitch": 40,
+      "velocity": 105,
+      "time": 0.03482139375
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.0982141875
+    },
+    {
+      "type": "note_off",
+      "pitch": 40,
+      "time": 0.13571414999999998
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 49,
+      "time": 0.2160712125
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 0.31696396875
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 108,
+      "time": 0.43660670625
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.4589281125
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 105,
+      "time": 0.4589281125
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.5374994625
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 53,
+      "time": 0.6482136375
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 0.7491063937500001
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 114,
+      "time": 0.8714277000000001
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 0.9723204562500002
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 107,
+      "time": 1.0660703625
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 1.16696311875
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 123,
+      "time": 1.28303443125
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 1.3839271874999999
+    }
+  ]
+}

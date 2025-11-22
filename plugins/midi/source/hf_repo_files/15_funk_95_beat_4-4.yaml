@@ -1,0 +1,8 @@
+chart_type: audio_waveform
+data: 15_funk_95_beat_4-4.csv
+fps: 24
+out: out/15_funk_95_beat_4-4.mp4
+palette: Blues
+time: time
+title: 15 Funk 95 Beat 4-4
+value: amplitude

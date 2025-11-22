@@ -1,0 +1,161 @@
+{
+  "source": "/home/miles/Documents/abstract-data-pipeline/plugins/midi/source/hf_repo_files/261_funk-purdieshuffle_130_fill_4-4.mid",
+  "ticks_per_beat": 480,
+  "length_seconds": 3.0009585375,
+  "events": [
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 87,
+      "time": 0.0
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.0624999375
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 74,
+      "time": 0.0624999375
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.0951922125
+    },
+    {
+      "type": "note_on",
+      "pitch": 38,
+      "velocity": 62,
+      "time": 0.15480753749999998
+    },
+    {
+      "type": "note_off",
+      "pitch": 38,
+      "time": 0.163461375
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 53,
+      "time": 0.30288431250000003
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 0.40384575
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 82,
+      "time": 0.4471149375
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 0.532691775
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 87,
+      "time": 0.532691775
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 0.548076375
+    },
+    {
+      "type": "note_on",
+      "pitch": 48,
+      "velocity": 88,
+      "time": 0.6105763125
+    },
+    {
+      "type": "note_off",
+      "pitch": 48,
+      "time": 0.63461475
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 66,
+      "time": 0.771153075
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 0.8721145124999999
+    },
+    {
+      "type": "note_on",
+      "pitch": 43,
+      "velocity": 91,
+      "time": 0.9134606249999999
+    },
+    {
+      "type": "note_off",
+      "pitch": 43,
+      "time": 1.001922075
+    },
+    {
+      "type": "note_on",
+      "pitch": 43,
+      "velocity": 98,
+      "time": 1.001922075
+    },
+    {
+      "type": "note_off",
+      "pitch": 43,
+      "time": 1.0144220625
+    },
+    {
+      "type": "note_on",
+      "pitch": 43,
+      "velocity": 93,
+      "time": 1.090383525
+    },
+    {
+      "type": "note_off",
+      "pitch": 43,
+      "time": 1.1028835125
+    },
+    {
+      "type": "note_on",
+      "pitch": 36,
+      "velocity": 58,
+      "time": 1.2124987875
+    },
+    {
+      "type": "note_off",
+      "pitch": 36,
+      "time": 1.313460225
+    },
+    {
+      "type": "note_on",
+      "pitch": 58,
+      "velocity": 118,
+      "time": 1.3567294125
+    },
+    {
+      "type": "note_on",
+      "pitch": 40,
+      "velocity": 127,
+      "time": 1.394229375
+    },
+    {
+      "type": "note_off",
+      "pitch": 58,
+      "time": 1.45769085
+    },
+    {
+      "type": "note_off",
+      "pitch": 40,
+      "time": 1.4942292750000001
+    }
+  ]
+}
