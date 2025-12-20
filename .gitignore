@@ -1,5 +1,6 @@
 # Python
-
+*.faiss
+*.jsonl
 
 .venv*/
 __pycache__/
