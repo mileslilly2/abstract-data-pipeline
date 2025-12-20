@@ -2,10 +2,13 @@ from pathlib import Path
 import json
 from indexer import build_faiss_index
 
-# build.py is in: oai_batch/sync/faiss/
+# build.py lives in: plugins/oai_batch/sync/faiss/
 PLUGIN_DIR = Path(__file__).resolve().parents[2]  # oai_batch
 
-WORKS_PATH = PLUGIN_DIR / "transform/kr/works.jsonl"
+WORKS_PATH = (
+    PLUGIN_DIR
+    / "transform/data/wvu_oai/oai_dc/kr/works.jsonl"
+)
 
 print("PLUGIN_DIR =", PLUGIN_DIR)
 print("WORKS_PATH =", WORKS_PATH)
