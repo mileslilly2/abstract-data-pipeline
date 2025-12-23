@@ -1,3 +1,1 @@
-from .config import get_settings
-
-settings = get_settings()
+from .source.config import get_settings, Settings  # re-export
