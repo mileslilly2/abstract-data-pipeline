@@ -1,0 +1,16 @@
+chart_type: line
+data: data/state_gdp_historic.csv
+time: Year
+value: GDP
+group: State
+width: 1080
+height: 1080
+dpi: 150
+fps: 24
+bitrate: "8M"
+out: videos/state_gdp_line_1080x1080.mp4
+title: "State GDP — {time:%Y}"
+x_label: "Year"
+y_label: "GDP ($)"
+legend: true
+hold_frames: 1

@@ -1,0 +1,16 @@
+chart_type: bar_race
+data: data/state_gdp_historic.csv
+time: Year
+category: State
+value: GDP
+top_n: 10
+width: 1080
+height: 1080
+dpi: 150
+fps: 24
+bitrate: "8M"
+out: videos/state_gdp_barrace_1080x1080.mp4
+title: "Top States by GDP — {time:%Y}"
+x_label: "GDP ($)"
+legend: false
+hold_frames: 1

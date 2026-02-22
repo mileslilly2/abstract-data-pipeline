@@ -1,0 +1,15 @@
+chart_type: line
+data: data/us_gdp_national.csv
+time: Year
+value: GDP
+width: 1080
+height: 1920
+dpi: 150
+fps: 24
+bitrate: "8M"
+out: videos/us_gdp_line_1080x1920.mp4
+title: "US GDP — {time:%Y}"
+x_label: "Year"
+y_label: "GDP ($)"
+legend: false
+hold_frames: 1
